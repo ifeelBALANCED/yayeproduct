@@ -43,18 +43,11 @@ if ! supabase gen types typescript --local > "$TMP_FILE" 2>/dev/null; then
 fi
 
 # ── Порівняння з поточним types.ts ───────────────────────────
-# Порівнюємо тільки секцію Database (Tables/Views/Functions/Enums),
-# ігноруючи backward-compat аліаси нижче рядка з 'AgeBand'.
-# Це дозволяє підтримувати аліаси локально без false-positive дрейфу.
-#
-# Якщо потрібно порівняти файли повністю — прибери фільтрацію нижче.
+# types.ts — чистий артефакт `supabase gen types` (без ручних правок),
+# тому порівнюємо файли байт-в-байт. Backward-compat аліаси
+# (AgeBand, Jurisdiction тощо) живуть окремо: packages/db/src/aliases.ts.
 
-CURRENT_DB_SECTION="$(sed -n '/^export type Database/,/^};$/p' "$TYPES_FILE")"
-GENERATED_DB_SECTION="$(sed -n '/^export type Database/,/^};$/p' "$TMP_FILE")"
-
-if diff_output=$(diff -u \
-    <(echo "$CURRENT_DB_SECTION") \
-    <(echo "$GENERATED_DB_SECTION")); then
+if diff_output=$(diff -u "$TYPES_FILE" "$TMP_FILE"); then
   echo "[check-db-types] OK — types.ts відповідає схемі БД."
   exit 0
 else
@@ -67,7 +60,7 @@ else
   echo "  Щоб виправити — перегенеруй файл:"
   echo "    supabase gen types typescript --local > $TYPES_FILE"
   echo ""
-  echo "  Потім переглянь зміни, збережи backward-compat аліаси"
-  echo "  (AgeBand, Jurisdiction тощо) і закомітуй."
+  echo "  Потім переглянь diff і закомітуй. Аліаси (AgeBand тощо)"
+  echo "  не зачіпаються — вони у packages/db/src/aliases.ts."
   exit 1
 fi

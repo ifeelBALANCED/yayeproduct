@@ -5,3 +5,5 @@ coverage
 pnpm-lock.yaml
 .omc
 supabase/migrations
+# Згенерований артефакт `supabase gen types` — S2 порівнює байт-в-байт (check-db-types.sh)
+packages/db/src/types.ts
