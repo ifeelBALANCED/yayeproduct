@@ -155,9 +155,10 @@ export default function OnboardingPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
+          {/* text-ink на accent: 5.6:1 (white — 3.2:1, fail WCAG 4.5:1 — S7 Lighthouse a11y) */}
           <button
             onClick={handleStart}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-4 font-sans text-base font-medium text-white transition-opacity active:opacity-80"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-4 font-sans text-base font-medium text-ink transition-opacity active:opacity-80"
           >
             почати
             <ChevronRight size={18} strokeWidth={1.5} />

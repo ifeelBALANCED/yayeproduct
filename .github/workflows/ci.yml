@@ -277,6 +277,64 @@ jobs:
             apps/teen/playwright-report/
           if-no-files-found: warn
 
+  # ─── S7 · Build + budget ─────────────────────────────────────────────────
+  # docs/quality-gate.md §3 S7: turbo build --affected зелений,
+  # size-limit chat <= 160 kB gz, Lighthouse CI perf >= 90, a11y = 100.
+  # PWA-аудит (SW не кешує /api/* і SSE) — e2e/pwa-sw.spec.ts, ганяється у s3-e2e.
+  s7-budget:
+    name: 'S7 · Build + budget'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 потрібен для turbo --affected (порівняння з base SHA)
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # docs/quality-gate.md §3 S7: turbo build --affected — обов'язково зелений.
+      # TURBO_SCM_BASE — базова SHA для визначення affected-пакетів (turbo 2.x).
+      - name: Build (turbo --affected)
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || 'HEAD^' }}
+        run: pnpm turbo run build --affected
+
+      # Budget і LHCI потребують apps/teen/.next навіть коли teen не affected.
+      # Кеш-хіт якщо вже збілджено у попередньому кроці.
+      - name: Ensure teen build
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: pnpm turbo run build --filter=@ya-ye/teen
+
+      # docs/quality-gate.md §3 S7: chat <= 160 kB gz.
+      # pnpm budget визначено у кореневому package.json → scripts/check-bundle-budget.mjs
+      - name: Bundle budget (chat <= 160 kB gz)
+        run: pnpm budget
+
+      # docs/quality-gate.md §3 S7: Lighthouse CI perf >= 90, a11y = 100.
+      # PWA-аудит SW (не кешує /api/*) — окремий тест у s3-e2e (e2e/pwa-sw.spec.ts).
+      - name: Lighthouse CI (perf >= 90, a11y = 100)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: pnpm lighthouse
+
   # ─── S5 · Security (SAST) ────────────────────────────────────────────────
   # docs/quality-gate.md §3 S5: semgrep OWASP top-10 + кастомні правила.
   # Кастомні правила (заборона SERVICE_ROLE_KEY поза server/adapters,

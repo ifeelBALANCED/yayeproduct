@@ -19,7 +19,8 @@ export function SpecialistPlaceholder({ message, cta, href }: SpecialistPlacehol
   const content = (
     <>
       <p className="font-sans text-sm leading-relaxed text-inkSoft">{message}</p>
-      <div className="mt-auto flex items-center justify-between font-sans text-sm text-accent">
+      {/* text-ink: accent на bg — 2.8:1, fail WCAG 4.5:1 (S7 Lighthouse a11y) */}
+      <div className="mt-auto flex items-center justify-between font-sans text-sm text-ink">
         <span className="transition-opacity group-hover:opacity-80">{cta}</span>
         <ChevronRight size={16} strokeWidth={1.5} />
       </div>

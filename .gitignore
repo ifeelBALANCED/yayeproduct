@@ -30,6 +30,8 @@ supabase/.temp/
 coverage/
 playwright-report/
 test-results/
+# Lighthouse CI — локальні звіти (docs/quality-gate.md §3 S7)
+.lighthouseci/
 
 # OS
 .DS_Store

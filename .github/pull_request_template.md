@@ -8,7 +8,8 @@
 
 ## Чеклист (з docs/quality-gate.md §4)
 
-- [ ] S0–S6 зелені (S7 — якщо ввімкнено)
+- [ ] S0–S7 зелені
+- [ ] `apps/teen/bundle-budget.json` оновлено (якщо змінювався) — причина в описі PR
 - [ ] Request/response зміни → схеми в `packages/contracts` оновлені
 - [ ] Нова міграція → RLS-тести в матриці (S2) + `supabase gen types` перегенеровано
 - [ ] Visual baselines оновлені → причина в описі MR

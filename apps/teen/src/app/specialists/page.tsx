@@ -82,7 +82,7 @@ export default function SpecialistsPage() {
             Наш methodology lead —{' '}
             <Link
               href={'/specialists/olena-vovk' as `/specialists/${string}`}
-              className="text-accent underline-offset-2 hover:underline"
+              className="text-inkSoft underline underline-offset-2"
             >
               Олена Вовк
             </Link>{' '}
@@ -97,7 +97,7 @@ export default function SpecialistsPage() {
 function Step({ n, title, text }: { n: string; title: string; text: string }) {
   return (
     <div className="rounded-2xl border border-divider bg-bgSoft p-5">
-      <p className="font-mono text-xs uppercase tracking-wider text-accent">{n}</p>
+      <p className="font-mono text-xs uppercase tracking-wider text-inkSoft">{n}</p>
       <h3 className="mt-2 font-sans text-base text-ink">{title}</h3>
       <p className="mt-1 font-sans text-sm leading-relaxed text-inkSoft">{text}</p>
     </div>
