@@ -1,10 +1,11 @@
 name: CI
 
+# P0-4 (docs/quality-gate.md §1): default-гілка репозиторію — master.
 on:
   push:
-    branches: [main, develop]
+    branches: [master]
   pull_request:
-    branches: [main, develop]
+    branches: [master]
 
 env:
   PNPM_VERSION: "9.14.4"
@@ -56,9 +57,12 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      # P0-4: пакет перейменовано clinical → method; старий шлях мовчки
+      # вантажив порожнечу. Coverage-режим вмикається у Phase 1 quality-gate (S1).
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage
-          path: packages/clinical/coverage/
+          path: packages/method/coverage/
+          if-no-files-found: warn

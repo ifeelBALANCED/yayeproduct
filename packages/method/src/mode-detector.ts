@@ -7,7 +7,10 @@ const COMPANIONSHIP_DRIFT_UA = [
   'тільки ти мене розумієш',
 ];
 
-// Diagnosis seek — Mode 4 (стоп-діагноз) + Принцип III
+// Diagnosis seek — Mode 3 (обережно: стоп-діагноз, межа компетенції) + Принцип III.
+// NB (P0-7): Mode 4 зарезервовано за bridge-to-specialist — маркер [MODE:4]
+// у системному промпті (system-prompt.ts:168). Раніше тут було mode:4, що
+// створювало колізію двох різних понять під одним значенням.
 const DIAGNOSIS_SEEK_UA = [
   'у мене депресія', 'це депресія', 'у мене біполярка', 'у мене тривожний розлад',
   'я невротик', 'мені діагностували', 'як ти думаєш, що у мене',
@@ -36,7 +39,7 @@ export function detectModeFromKeywords(
 
   const diagTriggers = matchKeywords(message, DIAGNOSIS_SEEK_UA);
   if (diagTriggers.length > 0) {
-    return { mode: 4, fm: 3, triggers: diagTriggers };
+    return { mode: 3, fm: 3, triggers: diagTriggers };
   }
 
   const anxietyTriggers = matchKeywords(message, ANXIETY_SOMATIC_UA);

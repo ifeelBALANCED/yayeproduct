@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@ya-ye/ui';
@@ -83,7 +84,7 @@ export default function OnboardingPage() {
               як до тебе звертатись?
             </h2>
             <p className="font-sans text-sm leading-relaxed text-inkSoft">
-              ім'я, нікнейм, псевдонім — або нічого.
+              ім’я, нікнейм, псевдонім — або нічого.
               <br />
               ти вирішуєш.
             </p>
@@ -163,12 +164,12 @@ export default function OnboardingPage() {
             почати
             <ChevronRight size={18} strokeWidth={1.5} />
           </button>
-          <a
+          <Link
             href="/info"
             className="block text-center font-sans text-sm text-inkSoft underline-offset-2 hover:underline"
           >
             як це працює?
-          </a>
+          </Link>
         </div>
       </main>
     );

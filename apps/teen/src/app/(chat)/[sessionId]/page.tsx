@@ -310,6 +310,9 @@ export default function ChatPage({
           sessionStartedAt: sessionStartedAtRef.current,
           userName: sessionStorage.getItem('user_name') ?? null,
           postCrisisMode,
+          // Demo-fallback для P0-3: коли Supabase не сконфігуровано, сервер
+          // не має age_band з БД — передаємо вибір з онбордингу (сервер валідує enum)
+          ageBand: sessionStorage.getItem('age_band') ?? null,
         }),
       });
 

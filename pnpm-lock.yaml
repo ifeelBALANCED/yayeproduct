@@ -39,6 +39,9 @@ importers:
         specifier: ^19.0.0
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.3.5
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.19
@@ -98,7 +101,7 @@ importers:
         version: 15.5.18(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next-intl:
         specifier: ^3.26.3
-        version: 3.26.5(next@15.5.18(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
+        version: 3.26.5(next@15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       react:
         specifier: ^19.0.0
         version: 19.2.6
@@ -106,6 +109,9 @@ importers:
         specifier: ^19.0.0
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.3.5
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.19
@@ -154,12 +160,15 @@ importers:
       '@ya-ye/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.6)
       next:
         specifier: ^15.1.0
         version: 15.5.18(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next-intl:
         specifier: ^3.26.3
-        version: 3.26.5(next@15.5.18(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
+        version: 3.26.5(next@15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       react:
         specifier: ^19.0.0
         version: 19.2.6
@@ -167,6 +176,9 @@ importers:
         specifier: ^19.0.0
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.3.5
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.19
@@ -6742,7 +6754,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-intl@3.26.5(next@15.5.18(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6):
+  next-intl@3.26.5(next@15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.10
       negotiator: 1.0.0
