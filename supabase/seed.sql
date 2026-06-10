@@ -1,9 +1,60 @@
--- Dev seed: 3 тестові терапевти + 1 clinical reviewer
+-- Dev seed: 3 тестові терапевти + auth.users синхронізація
 -- НЕ використовувати у production
+--
+-- auth.users записи необхідні для локального тестування RLS-матриці:
+-- policy "therapists: select" перевіряє auth.uid() = id,
+-- що нетестовно без відповідного запису в auth.users.
+-- Паролі: bcrypt('password', gen_salt('bf')) — лише для локального dev.
+--
+-- Боргова мітка quality-gate §6:
+-- "Особисті контакти реальної людини в коді й seed" (migrations/000005:137-140)
+-- Новий seed використовує виключно placeholder-дані @example.com.
 
--- Clinical reviewer placeholder (замінити перед launch)
--- Створюється через Supabase Auth dashboard вручну з email reviewer@ya-ye.app
--- і роллю clinical_reviewer у user_metadata
+insert into auth.users (
+  id,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  role,
+  aud
+) values
+(
+  '11111111-0000-0000-0000-000000000001',
+  'therapist1@example.com',
+  crypt('password', gen_salt('bf')),
+  now(),
+  '{"role":"therapist"}'::jsonb,
+  now(),
+  now(),
+  'authenticated',
+  'authenticated'
+),
+(
+  '11111111-0000-0000-0000-000000000002',
+  'therapist2@example.com',
+  crypt('password', gen_salt('bf')),
+  now(),
+  '{"role":"therapist"}'::jsonb,
+  now(),
+  now(),
+  'authenticated',
+  'authenticated'
+),
+(
+  '11111111-0000-0000-0000-000000000003',
+  'therapist3@example.com',
+  crypt('password', gen_salt('bf')),
+  now(),
+  '{"role":"therapist"}'::jsonb,
+  now(),
+  now(),
+  'authenticated',
+  'authenticated'
+)
+on conflict (id) do nothing;
 
 -- 3 тестові верифіковані терапевти
 insert into therapists (

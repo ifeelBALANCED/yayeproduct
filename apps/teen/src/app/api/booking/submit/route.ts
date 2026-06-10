@@ -1,41 +1,50 @@
-// POST /api/booking/submit — приймає заявку на сесію (Phase F).
-// Якщо Supabase сконфігурований — зберігає у booking_requests.
-// Якщо ні — повертає success: true з persisted: false (демо не ламається),
-// плюс друкує лог щоб бачити заявку у термінальному outputi.
-//
-// Структура запиту повністю відповідає колонкам booking_requests з міграції 005.
+// POST /api/booking/submit — тонкий Controller (CQRS-lite, quality-gate §2.1).
+// S5 PII: жодного console.log з контактними даними (ім'я, контакт).
+// Вся логіка збереження — у commands/submitBooking.ts.
 
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { getSpecialistBySlug, getSessionType } from '@/lib/specialists';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { submitBooking } from '@/server/commands/submitBooking';
+import type { ContactChannel, BookingAgeBand } from '@/server/commands/submitBooking';
 
 interface SubmitBody {
   specialist_slug?: string;
   session_type?: string;
   user_name?: string;
-  contact_preferred?: 'telegram' | 'email';
+  contact_preferred?: ContactChannel;
   contact_value?: string;
-  user_age_band?: '13-15' | '16-17' | '18-25' | '25+';
+  user_age_band?: BookingAgeBand;
   topic?: string | null;
   ai_excerpt?: string | null;
   consent_offer?: boolean;
   consent_contact?: boolean;
 }
 
-const VALID_AGE_BANDS = ['13-15', '16-17', '18-25', '25+'] as const;
-const VALID_CHANNELS = ['telegram', 'email'] as const;
+const VALID_AGE_BANDS: readonly BookingAgeBand[] = ['13-15', '16-17', '18-25', '25+'] as const;
+const VALID_CHANNELS: readonly ContactChannel[] = ['telegram', 'email'] as const;
+
+function jsonError(error: string, status: number): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 export async function POST(req: Request) {
+  // Rate limit — захист від спаму заявок.
+  if (!rateLimit(`booking:${clientIp(req)}`, 5, 60_000)) {
+    return jsonError('too many requests', 429);
+  }
+
   let body: SubmitBody;
   try {
     body = (await req.json()) as SubmitBody;
   } catch {
-    return new Response(JSON.stringify({ error: 'invalid JSON' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('invalid JSON', 400);
   }
 
-  // Валідація необхідних полів
+  // Валідація необхідних полів.
   const errors: string[] = [];
   if (!body.specialist_slug?.trim()) errors.push('specialist_slug missing');
   if (!body.session_type?.trim()) errors.push('session_type missing');
@@ -59,83 +68,60 @@ export async function POST(req: Request) {
     });
   }
 
-  // Перевіряємо що фахівець + sessionType існують у нашому TS-каталозі
+  // Перевіряємо що фахівець + sessionType існують у TS-каталозі.
   const specialist = getSpecialistBySlug(body.specialist_slug!);
   const session = specialist ? getSessionType(specialist, body.session_type!) : undefined;
   if (!specialist || !session) {
-    return new Response(JSON.stringify({ error: 'specialist or session type not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError('specialist or session type not found', 404);
   }
 
-  // Fallback: Supabase не сконфігурований → друкуємо в лог, повертаємо success
-  if (!isSupabaseConfigured()) {
-    console.log('[booking.submit] (no DB — demo fallback)', {
-      specialist: specialist.slug,
-      session: session.type,
-      name: body.user_name,
-      channel: body.contact_preferred,
-      contact: body.contact_value,
-      age: body.user_age_band,
+  // Шукаємо specialist_id у БД (якщо сконфігурована).
+  let specialistDbId: string | null = null;
+  if (isSupabaseConfigured()) {
+    const supabase = createClient();
+    const { data: spRow, error: spErr } = await supabase
+      .from('specialists')
+      .select('id')
+      .eq('slug', specialist.slug)
+      .single();
+
+    if (spErr || !spRow) {
+      console.warn('[booking.submit] specialist not found in DB');
+      // Не блокуємо UX — падаємо в demo fallback нижче.
+    } else {
+      specialistDbId = (spRow as { id: string }).id;
+    }
+  }
+
+  const supabase = isSupabaseConfigured() && specialistDbId ? createClient() : null;
+
+  const result = await submitBooking(
+    {
+      specialistDbId,
+      sessionType: body.session_type!,
+      userName: body.user_name!.trim(),
+      contactPreferred: body.contact_preferred!,
+      contactValue: body.contact_value!.trim(),
+      userAgeBand: body.user_age_band!,
       topic: body.topic ?? null,
-    });
-    return new Response(JSON.stringify({ success: true, persisted: false }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    });
+      aiExcerpt: body.ai_excerpt ?? null,
+      consentOffer: body.consent_offer!,
+      consentContact: body.consent_contact!,
+    },
+    { supabase },
+  );
+
+  if (result.kind === 'error') {
+    // Sanitized — без internals (S5).
+    return jsonError('internal', 500);
   }
 
-  // Persistent шлях: треба знайти specialist_id за slug у БД
-  const supabase = createClient();
-  const { data: spRow, error: spErr } = await supabase
-    .from('specialists')
-    .select('id')
-    .eq('slug', specialist.slug)
-    .single();
-
-  if (spErr || !spRow) {
-    // Якщо Supabase сконфігурований, але specialists-таблиця не засіяна —
-    // ми не блокуємо UX; падаємо в fallback
-    console.warn('[booking.submit] specialist not found in DB, using fallback:', spErr?.message);
-    return new Response(JSON.stringify({ success: true, persisted: false }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const { data: br, error: brErr } = await supabase
-    .from('booking_requests')
-    .insert({
-      specialist_id: spRow.id,
-      session_type: body.session_type,
-      user_name: body.user_name!.trim(),
-      contact_preferred: body.contact_preferred,
-      contact_value: body.contact_value!.trim(),
-      user_age_band: body.user_age_band,
-      topic: body.topic ?? null,
-      ai_excerpt: body.ai_excerpt ?? null,
-      consent_offer: body.consent_offer,
-      consent_contact: body.consent_contact,
-    })
-    .select('id')
-    .single();
-
-  if (brErr || !br) {
-    console.error('[booking.submit] insert failed:', brErr?.message);
-    // Не показуємо юзеру технічну помилку — повертаємо success, бо
-    // для нього demo-флоу важливіший за DB-аудит
-    return new Response(JSON.stringify({ success: true, persisted: false }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // TODO Phase G: відправити нотифікацію Олені (Telegram bot або email)
-  // TODO Phase G: відправити confirmation клієнту у обраний канал
-
-  return new Response(JSON.stringify({ success: true, persisted: true, booking_id: br.id }), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      success: true,
+      persisted: result.persisted,
+      ...(result.bookingId ? { booking_id: result.bookingId } : {}),
+    }),
+    { status: 201, headers: { 'Content-Type': 'application/json' } },
+  );
 }
