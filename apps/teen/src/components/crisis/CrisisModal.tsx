@@ -5,6 +5,7 @@ import { Phone, MessageSquare, ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
 import type { Hotline } from '@ya-ye/method';
 import { cn } from '@ya-ye/ui';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 
 interface CrisisModalProps {
   hotlines: readonly Hotline[];
@@ -15,10 +16,9 @@ interface CrisisModalProps {
 export function CrisisModal({ hotlines, onClose, onGrounding }: CrisisModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const firstButton = dialogRef.current?.querySelector<HTMLElement>('button, a[href]');
-    firstButton?.focus();
-  }, []);
+  // WCAG 2.1.2: focus-trap — Tab/Shift+Tab цикляться всередині модалки,
+  // фокус повертається після закриття.
+  useFocusTrap(dialogRef);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {

@@ -2,27 +2,11 @@
 // S5 PII: жодного console.log з контактними даними (ім'я, контакт).
 // Вся логіка збереження — у commands/submitBooking.ts.
 
+import { BookingSubmitSchema } from '@ya-ye/contracts';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { getSpecialistBySlug, getSessionType } from '@/lib/specialists';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { submitBooking } from '@/server/commands/submitBooking';
-import type { ContactChannel, BookingAgeBand } from '@/server/commands/submitBooking';
-
-interface SubmitBody {
-  specialist_slug?: string;
-  session_type?: string;
-  user_name?: string;
-  contact_preferred?: ContactChannel;
-  contact_value?: string;
-  user_age_band?: BookingAgeBand;
-  topic?: string | null;
-  ai_excerpt?: string | null;
-  consent_offer?: boolean;
-  consent_contact?: boolean;
-}
-
-const VALID_AGE_BANDS: readonly BookingAgeBand[] = ['13-15', '16-17', '18-25', '25+'] as const;
-const VALID_CHANNELS: readonly ContactChannel[] = ['telegram', 'email'] as const;
 
 function jsonError(error: string, status: number): Response {
   return new Response(JSON.stringify({ error }), {
@@ -37,40 +21,36 @@ export async function POST(req: Request) {
     return jsonError('too many requests', 429);
   }
 
-  let body: SubmitBody;
+  let raw: unknown;
   try {
-    body = (await req.json()) as SubmitBody;
+    raw = await req.json();
   } catch {
     return jsonError('invalid JSON', 400);
   }
 
-  // Валідація необхідних полів.
-  const errors: string[] = [];
-  if (!body.specialist_slug?.trim()) errors.push('specialist_slug missing');
-  if (!body.session_type?.trim()) errors.push('session_type missing');
-  if (!body.user_name?.trim() || body.user_name.trim().length < 2) errors.push('user_name invalid');
-  if (!body.contact_preferred || !VALID_CHANNELS.includes(body.contact_preferred)) {
-    errors.push('contact_preferred invalid');
+  // Trim до валідації: '  a ' не має проходити min(2) за рахунок пробілів.
+  if (raw && typeof raw === 'object') {
+    const record = raw as Record<string, unknown>;
+    for (const key of ['user_name', 'contact_value'] as const) {
+      if (typeof record[key] === 'string') record[key] = (record[key] as string).trim();
+    }
   }
-  if (!body.contact_value?.trim() || body.contact_value.trim().length < 3) {
-    errors.push('contact_value invalid');
-  }
-  if (!body.user_age_band || !VALID_AGE_BANDS.includes(body.user_age_band)) {
-    errors.push('user_age_band invalid');
-  }
-  if (body.consent_offer !== true) errors.push('consent_offer required');
-  if (body.consent_contact !== true) errors.push('consent_contact required');
 
-  if (errors.length > 0) {
-    return new Response(JSON.stringify({ error: 'validation failed', details: errors }), {
+  // Валідація — єдине джерело правди: BookingSubmitSchema (@ya-ye/contracts, §2.4).
+  const parsed = BookingSubmitSchema.safeParse(raw);
+  if (!parsed.success) {
+    // S5 PII: у details лише шляхи полів, без введених значень.
+    const details = parsed.error.issues.map((issue) => `${issue.path.join('.')} invalid`);
+    return new Response(JSON.stringify({ error: 'validation failed', details }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+  const body = parsed.data;
 
   // Перевіряємо що фахівець + sessionType існують у TS-каталозі.
-  const specialist = getSpecialistBySlug(body.specialist_slug!);
-  const session = specialist ? getSessionType(specialist, body.session_type!) : undefined;
+  const specialist = getSpecialistBySlug(body.specialist_slug);
+  const session = specialist ? getSessionType(specialist, body.session_type) : undefined;
   if (!specialist || !session) {
     return jsonError('specialist or session type not found', 404);
   }
@@ -98,15 +78,15 @@ export async function POST(req: Request) {
   const result = await submitBooking(
     {
       specialistDbId,
-      sessionType: body.session_type!,
-      userName: body.user_name!.trim(),
-      contactPreferred: body.contact_preferred!,
-      contactValue: body.contact_value!.trim(),
-      userAgeBand: body.user_age_band!,
+      sessionType: body.session_type,
+      userName: body.user_name,
+      contactPreferred: body.contact_preferred,
+      contactValue: body.contact_value,
+      userAgeBand: body.user_age_band,
       topic: body.topic ?? null,
       aiExcerpt: body.ai_excerpt ?? null,
-      consentOffer: body.consent_offer!,
-      consentContact: body.consent_contact!,
+      consentOffer: body.consent_offer,
+      consentContact: body.consent_contact,
     },
     { supabase },
   );

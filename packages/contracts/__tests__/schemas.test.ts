@@ -8,6 +8,7 @@ import {
   SessionsCreateResponseSchema,
   MessagesResponseSchema,
   SseEventSchema,
+  BookingSubmitSchema,
 } from '../src/index';
 
 // ---------------------------------------------------------------------------
@@ -412,5 +413,122 @@ describe('SseEventSchema', () => {
     expect(() => SseEventSchema.safeParse(null)).not.toThrow();
     expect(() => SseEventSchema.safeParse('raw string')).not.toThrow();
     expect(() => SseEventSchema.safeParse(42)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BookingSubmitSchema — email-валідація при contact_preferred = 'email'
+// ---------------------------------------------------------------------------
+
+const VALID_BOOKING_BASE = {
+  specialist_slug: 'olena-vovk',
+  session_type: 'discovery',
+  user_name: 'Марко',
+  contact_preferred: 'telegram' as const,
+  contact_value: '@marko_ua',
+  user_age_band: '18-25' as const,
+  topic: null,
+  ai_excerpt: null,
+  consent_offer: true as const,
+  consent_contact: true as const,
+};
+
+describe('BookingSubmitSchema', () => {
+  it('valid — telegram-канал без email-валідації', () => {
+    const result = BookingSubmitSchema.safeParse(VALID_BOOKING_BASE);
+    expect(result.success).toBe(true);
+  });
+
+  it('valid — email-канал з коректним email', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_preferred: 'email',
+      contact_value: 'user@example.com',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('valid — email-канал з піддоменом', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_preferred: 'email',
+      contact_value: 'user@mail.example.com',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('invalid — email-канал з некоректним email (без @)', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_preferred: 'email',
+      contact_value: 'notanemail',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — email-канал з некоректним email (без домену)', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_preferred: 'email',
+      contact_value: 'user@',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — email-канал з порожнім рядком', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_preferred: 'email',
+      contact_value: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — telegram-канал з коротким username (< 3 символи) — базова перевірка', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      contact_value: 'ab',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — consent_offer = false', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      consent_offer: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — consent_contact = false', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      consent_contact: false,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — невалідний user_age_band', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      user_age_band: '10-12',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('invalid — user_name < 2 символи', () => {
+    const result = BookingSubmitSchema.safeParse({
+      ...VALID_BOOKING_BASE,
+      user_name: 'М',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('valid — всі age_band значення включно з 25+', () => {
+    for (const band of ['13-15', '16-17', '18-25', '25+'] as const) {
+      expect(
+        BookingSubmitSchema.safeParse({ ...VALID_BOOKING_BASE, user_age_band: band }).success,
+      ).toBe(true);
+    }
   });
 });

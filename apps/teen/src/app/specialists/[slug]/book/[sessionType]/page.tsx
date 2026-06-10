@@ -47,9 +47,18 @@ export default function BookingPage({
 
   const isMinor = ageBand === '13-15' || ageBand === '16-17';
   const isDiscovery = session.type === 'discovery';
+
+  // Клієнтська email-валідація: якщо обрано email-канал, перевіряємо формат.
+  // Той самий критерій, що і в BookingSubmitSchema (packages/contracts).
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const contactValueValid =
+    contactPreferred === 'email'
+      ? EMAIL_RE.test(contactValue.trim())
+      : contactValue.trim().length >= 3;
+
   const formValid =
     name.trim().length >= 2 &&
-    contactValue.trim().length >= 3 &&
+    contactValueValid &&
     ageBand !== '' &&
     consentOffer &&
     consentContact;
@@ -217,6 +226,14 @@ export default function BookingPage({
               placeholder={contactPreferred === 'telegram' ? '@username' : 'example@email.com'}
               className="w-full rounded-2xl border border-divider bg-bgSoft px-4 py-3 font-sans text-base text-ink placeholder:text-inkSoft/50 focus:border-accent/50 focus:outline-none"
             />
+            {/* Підказка формату email — з'являється якщо введено некоректний email */}
+            {contactPreferred === 'email' &&
+              contactValue.trim().length > 0 &&
+              !EMAIL_RE.test(contactValue.trim()) && (
+                <p className="font-sans text-xs text-crisis" role="alert">
+                  Введи коректний email, наприклад: name@example.com
+                </p>
+              )}
           </div>
 
           {/* Age band */}
