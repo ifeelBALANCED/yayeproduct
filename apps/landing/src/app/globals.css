@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: 'cv11', 'ss01';
   }
 }
 

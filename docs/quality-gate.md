@@ -18,15 +18,15 @@ Gate будується на: **SOLID, DRY, GRASP, GoF (мінімально н�
 
 Gate вмикається тільки після виправлення. Зараз ці дефекти роблять будь-який «зелений» CI фікцією:
 
-| # | Дефект | Де | Чому блокер |
-|---|---|---|---|
-| P0-1 | `crisis_events` insert пише неіснуючі колонки `trigger_text`, `detected_at`, не передає NOT NULL `jurisdiction` | `apps/teen/src/app/api/chat/route.ts:126-131` vs `supabase/migrations/20240101000001` | На реальній БД **кожен кризовий евент мовчки втрачається** (fire-and-forget `.then()`). Safety-критично |
-| P0-2 | Живий `ANTHROPIC_API_KEY` на диску | `.env:13` (у git-історії відсутній — перевірено) | Ротувати ключ негайно; додати gitleaks (S0) |
-| P0-3 | `ageBand: '16-17'` захардкожено для всіх | `apps/teen/src/app/api/chat/route.ts:177` | Safeguarding 13-15 у промпті ніколи не активується — методологічний fail |
-| P0-4 | CI тригериться на `main`/`develop`, гілка — `master`; coverage-шлях `packages/clinical/` (пакет = `method`) | `.github/workflows/ci.yml:5-7,64` | **CI взагалі не запускається**; coverage ніколи не вантажиться |
-| P0-5 | Zero auth на всіх 7 ендпоінтах; IDOR `GET /api/sessions/[id]/messages`; no rate-limit на `/api/chat`; service-role key для всіх операцій | `apps/teen/src/app/api/**`, `apps/teen/src/lib/supabase/server.ts:27-36` | GDPR Art. 9 (special category data), cost-abuse Anthropic, RLS повністю обійдено |
-| P0-6 | `turbo.json: test dependsOn ^build` → unit-тести чекають збірки 3 Next.js апок | `turbo.json:21` | Найшвидший фідбек-луп (~1 хв тестів) коштує ~3 хв збірки. Прибрати залежність |
-| P0-7 | Колізія Mode 4: `mode-detector.ts:38` → diagnosis-stop, system-prompt `[MODE:4]` → specialist-redirect | `packages/method` | Два сенси одного значення; контрактний тест (S6) неможливий до фіксу |
+| #    | Дефект                                                                                                                                   | Де                                                                                    | Чому блокер                                                                                             |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| P0-1 | `crisis_events` insert пише неіснуючі колонки `trigger_text`, `detected_at`, не передає NOT NULL `jurisdiction`                          | `apps/teen/src/app/api/chat/route.ts:126-131` vs `supabase/migrations/20240101000001` | На реальній БД **кожен кризовий евент мовчки втрачається** (fire-and-forget `.then()`). Safety-критично |
+| P0-2 | Живий `ANTHROPIC_API_KEY` на диску                                                                                                       | `.env:13` (у git-історії відсутній — перевірено)                                      | Ротувати ключ негайно; додати gitleaks (S0)                                                             |
+| P0-3 | `ageBand: '16-17'` захардкожено для всіх                                                                                                 | `apps/teen/src/app/api/chat/route.ts:177`                                             | Safeguarding 13-15 у промпті ніколи не активується — методологічний fail                                |
+| P0-4 | CI тригериться на `main`/`develop`, гілка — `master`; coverage-шлях `packages/clinical/` (пакет = `method`)                              | `.github/workflows/ci.yml:5-7,64`                                                     | **CI взагалі не запускається**; coverage ніколи не вантажиться                                          |
+| P0-5 | Zero auth на всіх 7 ендпоінтах; IDOR `GET /api/sessions/[id]/messages`; no rate-limit на `/api/chat`; service-role key для всіх операцій | `apps/teen/src/app/api/**`, `apps/teen/src/lib/supabase/server.ts:27-36`              | GDPR Art. 9 (special category data), cost-abuse Anthropic, RLS повністю обійдено                        |
+| P0-6 | `turbo.json: test dependsOn ^build` → unit-тести чекають збірки 3 Next.js апок                                                           | `turbo.json:21`                                                                       | Найшвидший фідбек-луп (~1 хв тестів) коштує ~3 хв збірки. Прибрати залежність                           |
+| P0-7 | Колізія Mode 4: `mode-detector.ts:38` → diagnosis-stop, system-prompt `[MODE:4]` → specialist-redirect                                   | `packages/method`                                                                     | Два сенси одного значення; контрактний тест (S6) неможливий до фіксу                                    |
 
 ---
 
@@ -85,17 +85,17 @@ Zod-схеми — **єдине** джерело request/response типів (3 
 
 ### S0 · Static (паралельно, ціль < 3 хв)
 
-| Check | Інструмент | Критерій fail | Стан зараз |
-|---|---|---|---|
-| Format | `prettier --check` | будь-який diff | скрипта немає — додати |
-| Lint | ESLint flat у **всіх 7** workspace | error | немає в landing, db, method, ui |
-| Typecheck | `tsc --noEmit` (strict + `noUncheckedIndexedAccess` — вже є) | error | ✅ працює |
-| Secrets | gitleaks | будь-який знахід | немає (а ключ — на диску) |
-| Deps audit | `pnpm audit --prod` + osv-scanner | high/critical | немає |
-| Arch conformance | dependency-cruiser (правила §2.2) | порушення | немає |
-| Dead code | knip | новий unused export | немає |
-| Duplication | jscpd | новий клон > 25 рядків | немає |
-| Design tokens | ESLint custom: emoji-regex у JSX-літералах (поточний селектор `JSXText` ловить **весь** текст — переписати на regex-перевірку значення); заборона `shadow-(md\|lg\|xl\|2xl)` (`CrisisModal.tsx:40` вже порушує); заборона hex-кольорів поза tailwind-конфігом | порушення | зламаний/немає |
+| Check            | Інструмент                                                                                                                                                                                                                                                    | Критерій fail          | Стан зараз                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------- |
+| Format           | `prettier --check`                                                                                                                                                                                                                                            | будь-який diff         | скрипта немає — додати          |
+| Lint             | ESLint flat у **всіх 7** workspace                                                                                                                                                                                                                            | error                  | немає в landing, db, method, ui |
+| Typecheck        | `tsc --noEmit` (strict + `noUncheckedIndexedAccess` — вже є)                                                                                                                                                                                                  | error                  | ✅ працює                       |
+| Secrets          | gitleaks                                                                                                                                                                                                                                                      | будь-який знахід       | немає (а ключ — на диску)       |
+| Deps audit       | `pnpm audit --prod` + osv-scanner                                                                                                                                                                                                                             | high/critical          | немає                           |
+| Arch conformance | dependency-cruiser (правила §2.2)                                                                                                                                                                                                                             | порушення              | немає                           |
+| Dead code        | knip                                                                                                                                                                                                                                                          | новий unused export    | немає                           |
+| Duplication      | jscpd                                                                                                                                                                                                                                                         | новий клон > 25 рядків | немає                           |
+| Design tokens    | ESLint custom: emoji-regex у JSX-літералах (поточний селектор `JSXText` ловить **весь** текст — переписати на regex-перевірку значення); заборона `shadow-(md\|lg\|xl\|2xl)` (`CrisisModal.tsx:40` вже порушує); заборона hex-кольорів поза tailwind-конфігом | порушення              | зламаний/немає                  |
 
 ### S1 · Unit (ціль < 2 хв, **без** `dependsOn ^build`)
 
@@ -124,14 +124,14 @@ Zod-схеми — **єдине** джерело request/response типів (3 
 
 Anthropic мокається через `page.route()` (детерміновані SSE-фікстури).
 
-| Флоу | Перевірки |
-|---|---|
-| Onboarding | splash → age (13-15 → parental notice) → name → редірект у сесію; `age_band` реально збережено і **використано в промпті** (анти-P0-3) |
-| Chat | send → SSE-стрім → баблі → mode-лейбл з відповіді (зараз стрічка хардкодить `[01 · підтримую]` — `page.tsx:400`); обрив стріму → UI не зависає (анти `JSON.parse`-краш) |
-| Crisis | тригер → `{type:'crisis'}` → модалка з hotlines → grounding 5-4-3-2-1 → post-crisis режим; back-link з `/crisis` веде в сесію (зараз веде на неіснуючий `/chat` — `crisis/page.tsx:29`) |
-| Session expiry | таймер → exit-екран; `setTimeout`-leak (`page.tsx:234`) не стріляє після unmount |
-| Specialists/booking | каталог → профіль → форма (email-валідація — зараз її немає; minor notice) → success; невалідний slug → справжній 404, не 200 |
-| A11y | `@axe-core/playwright` на кожній сторінці флоу: 0 serious/critical; keyboard-тест focus-trap CrisisModal (зараз **fail** — трапа немає, WCAG 2.1.2) |
+| Флоу                | Перевірки                                                                                                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onboarding          | splash → age (13-15 → parental notice) → name → редірект у сесію; `age_band` реально збережено і **використано в промпті** (анти-P0-3)                                                  |
+| Chat                | send → SSE-стрім → баблі → mode-лейбл з відповіді (зараз стрічка хардкодить `[01 · підтримую]` — `page.tsx:400`); обрив стріму → UI не зависає (анти `JSON.parse`-краш)                 |
+| Crisis              | тригер → `{type:'crisis'}` → модалка з hotlines → grounding 5-4-3-2-1 → post-crisis режим; back-link з `/crisis` веде в сесію (зараз веде на неіснуючий `/chat` — `crisis/page.tsx:29`) |
+| Session expiry      | таймер → exit-екран; `setTimeout`-leak (`page.tsx:234`) не стріляє після unmount                                                                                                        |
+| Specialists/booking | каталог → профіль → форма (email-валідація — зараз її немає; minor notice) → success; невалідний slug → справжній 404, не 200                                                           |
+| A11y                | `@axe-core/playwright` на кожній сторінці флоу: 0 serious/critical; keyboard-тест focus-trap CrisisModal (зараз **fail** — трапа немає, WCAG 2.1.2)                                     |
 
 ### S4 · Visual regression (Playwright `toHaveScreenshot`)
 
@@ -150,16 +150,16 @@ Anthropic мокається через `page.route()` (детермінован
 
 ### S5 · Security (частина — S0, решта тут)
 
-| Check | Інструмент / тест | Стан |
-|---|---|---|
-| SAST | semgrep (OWASP top-10 ruleset + кастом: заборона `SUPABASE_SERVICE_ROLE_KEY` поза `server/adapters`) | немає |
-| Security headers | інтеграційний тест: відповідь містить CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy | **зараз 0 хедерів** в обох next.config |
-| AuthN/Z | кожен route: 401 без токена; IDOR-регресія (S2) | auth немає взагалі |
-| Rate limit | тест: N+1-й запит до `/api/chat` → 429 | лімітера немає |
-| Input bounds | zod-ліміти з contracts (S1) | unbounded |
-| Prompt-injection | history **тільки з БД**, не з клієнта (`route.ts:51-61` — зараз клієнт інжектить assistant-репліки); тест: crafted history відхиляється | відкрито |
-| PII | semgrep: `console.log` з PII-полями (зараз booking логує контакти — `submit/route.ts:74-86`); error-відповіді без internals | відкрито |
-| GDPR | `DELETE /api/sessions/[id]` (cascade) + тест; retention-політика задокументована | ендпоінта немає |
+| Check            | Інструмент / тест                                                                                                                       | Стан                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| SAST             | semgrep (OWASP top-10 ruleset + кастом: заборона `SUPABASE_SERVICE_ROLE_KEY` поза `server/adapters`)                                    | немає                                  |
+| Security headers | інтеграційний тест: відповідь містить CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy           | **зараз 0 хедерів** в обох next.config |
+| AuthN/Z          | кожен route: 401 без токена; IDOR-регресія (S2)                                                                                         | auth немає взагалі                     |
+| Rate limit       | тест: N+1-й запит до `/api/chat` → 429                                                                                                  | лімітера немає                         |
+| Input bounds     | zod-ліміти з contracts (S1)                                                                                                             | unbounded                              |
+| Prompt-injection | history **тільки з БД**, не з клієнта (`route.ts:51-61` — зараз клієнт інжектить assistant-репліки); тест: crafted history відхиляється | відкрито                               |
+| PII              | semgrep: `console.log` з PII-полями (зараз booking логує контакти — `submit/route.ts:74-86`); error-відповіді без internals             | відкрито                               |
+| GDPR             | `DELETE /api/sessions/[id]` (cascade) + тест; retention-політика задокументована                                                        | ендпоінта немає                        |
 
 ### S6 · Method/AI gates (специфіка продукту — найвищий пріоритет рев'ю)
 
@@ -191,13 +191,13 @@ Anthropic мокається через `page.route()` (детермінован
 
 ## 5 · Rollout (gate вмикається тільки зеленим)
 
-| Фаза | Зміст | Required з |
-|---|---|---|
-| **0** | P0-1…P0-7 + ротація ключа + фікс CI-тригерів | typecheck, build (вже є) |
-| **1** | S0 повністю + S1 (contracts, тести method, coverage у CI) | + S0, S1 |
-| **2** | S2 (supabase local, RLS-матриця, schema-contract) + auth/rate-limit + S5-тести | + S2, S5 |
-| **3** | S3 + S4 (E2E, visual, a11y) | + S3, S4, S6 |
-| **4** | S7 (budget, Lighthouse, PWA) | + S7 |
+| Фаза  | Зміст                                                                          | Required з               |
+| ----- | ------------------------------------------------------------------------------ | ------------------------ |
+| **0** | P0-1…P0-7 + ротація ключа + фікс CI-тригерів                                   | typecheck, build (вже є) |
+| **1** | S0 повністю + S1 (contracts, тести method, coverage у CI)                      | + S0, S1                 |
+| **2** | S2 (supabase local, RLS-матриця, schema-contract) + auth/rate-limit + S5-тести | + S2, S5                 |
+| **3** | S3 + S4 (E2E, visual, a11y)                                                    | + S3, S4, S6             |
+| **4** | S7 (budget, Lighthouse, PWA)                                                   | + S7                     |
 
 Анти-правило: **не вмикати** check у required, поки він червоний — мертвий gate гірший за відсутній.
 
@@ -205,19 +205,19 @@ Anthropic мокається через `page.route()` (детермінован
 
 ## 6 · Реєстр відомого боргу (не блокує merge, блокує релокацію в «done»)
 
-| Борг | Де |
-|---|---|
-| FM4: немає сценаріїв і keyword-детекції | `packages/method/scenarios.ts`, `mode-detector.ts` |
-| `users.user_name` ігнорується сервером | `api/sessions/route.ts:17` |
-| `parental_consent` — stub 501, флоу не гейтиться | `api/consent/route.ts` |
-| `api/crisis`, `api/handoff` — 501 | stubs |
-| `types.ts` ручний, `25+` vs `AgeBand` розсинхрон | `packages/db/src/types.ts` |
-| Міграція `…000004` відсутня в послідовності | `supabase/migrations/` |
-| Supabase Realtime у стеку CLAUDE.md, у коді не використовується | стек-дрейф |
-| Особисті контакти реальної людини в коді й seed | `system-prompt.ts:227`, `migrations/…000005:137-140` |
-| en.json є, локаль захардкожена `uk` | `apps/teen/src/i18n/request.ts:5` |
-| `outputFileTracingIncludes` тягне `docs/**` у serverless-бандл | `apps/teen/next.config.mjs:13-15` |
+| Борг                                                            | Де                                                   |
+| --------------------------------------------------------------- | ---------------------------------------------------- |
+| FM4: немає сценаріїв і keyword-детекції                         | `packages/method/scenarios.ts`, `mode-detector.ts`   |
+| `users.user_name` ігнорується сервером                          | `api/sessions/route.ts:17`                           |
+| `parental_consent` — stub 501, флоу не гейтиться                | `api/consent/route.ts`                               |
+| `api/crisis`, `api/handoff` — 501                               | stubs                                                |
+| `types.ts` ручний, `25+` vs `AgeBand` розсинхрон                | `packages/db/src/types.ts`                           |
+| Міграція `…000004` відсутня в послідовності                     | `supabase/migrations/`                               |
+| Supabase Realtime у стеку CLAUDE.md, у коді не використовується | стек-дрейф                                           |
+| Особисті контакти реальної людини в коді й seed                 | `system-prompt.ts:227`, `migrations/…000005:137-140` |
+| en.json є, локаль захардкожена `uk`                             | `apps/teen/src/i18n/request.ts:5`                    |
+| `outputFileTracingIncludes` тягне `docs/**` у serverless-бандл  | `apps/teen/next.config.mjs:13-15`                    |
 
 ---
 
-*Цей документ — частина методологічного контуру продукту. Якщо перевірка конфліктує з `docs/method-framework.md` — рамка виграє, перевірка переписується.*
+_Цей документ — частина методологічного контуру продукту. Якщо перевірка конфліктує з `docs/method-framework.md` — рамка виграє, перевірка переписується._

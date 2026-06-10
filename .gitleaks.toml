@@ -1,0 +1,20 @@
+# gitleaks — захист від витоку секретів (S0, docs/quality-gate.md §3)
+title = "ya-ye gitleaks config"
+
+[extend]
+# Використовуємо офіційний набір правил gitleaks за замовчуванням
+useDefault = true
+
+[allowlist]
+description = "Дозволяємо placeholder-значення у .env.example та seed-файлах"
+regexes = [
+  # Рядки з example/placeholder значеннями — не реальні секрети
+  '''(?i)(your[_-]?|example[_-]?|placeholder[_-]?|dummy[_-]?|fake[_-]?|test[_-]?)''',
+  # Seed-файли можуть містити тестові uuid/email без секретів
+  '''[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}''',
+]
+paths = [
+  '''.env\.example''',
+  '''supabase/seed\.sql''',
+  '''supabase/migrations/.*\.sql''',
+]

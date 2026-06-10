@@ -33,17 +33,12 @@ export default async function BookingSuccessPage({ params, searchParams }: PageP
         </div>
 
         <div className="mt-6 space-y-3 text-center">
-          <p className="font-mono text-xs uppercase tracking-wider text-accent">
-            заявка прийнята
-          </p>
-          <h1 className="font-serif text-4xl italic text-ink md:text-5xl">
-            Дякуємо!
-          </h1>
+          <p className="font-mono text-xs uppercase tracking-wider text-accent">заявка прийнята</p>
+          <h1 className="font-serif text-4xl italic text-ink md:text-5xl">Дякуємо!</h1>
           <p className="mx-auto max-w-md font-sans text-base leading-relaxed text-inkSoft">
-            Твоя заявка на <strong className="text-ink">{session.title}</strong>{' '}
-            з {specialist.fullName} прийнята. {firstName} особисто
-            зв&apos;яжеться з тобою через {channelLabel} протягом 24-48 годин
-            (у робочі дні).
+            Твоя заявка на <strong className="text-ink">{session.title}</strong> з{' '}
+            {specialist.fullName} прийнята. {firstName} особисто зв&apos;яжеться з тобою через{' '}
+            {channelLabel} протягом 24-48 годин (у робочі дні).
           </p>
         </div>
 
@@ -55,9 +50,8 @@ export default async function BookingSuccessPage({ params, searchParams }: PageP
               n="1"
               text={
                 <>
-                  <strong className="text-ink">Перевір {channelLabel}</strong>{' '}
-                  протягом 1-2 робочих днів — {firstName} напише з кількома
-                  варіантами часу.
+                  <strong className="text-ink">Перевір {channelLabel}</strong> протягом 1-2 робочих
+                  днів — {firstName} напише з кількома варіантами часу.
                 </>
               }
             />
@@ -65,8 +59,8 @@ export default async function BookingSuccessPage({ params, searchParams }: PageP
               n="2"
               text={
                 <>
-                  <strong className="text-ink">Обери час</strong>, який тобі
-                  підходить — і отримаєш посилання на відеодзвінок (Whereby або Zoom).
+                  <strong className="text-ink">Обери час</strong>, який тобі підходить — і отримаєш
+                  посилання на відеодзвінок (Whereby або Zoom).
                 </>
               }
             />
@@ -74,9 +68,8 @@ export default async function BookingSuccessPage({ params, searchParams }: PageP
               n="3"
               text={
                 <>
-                  <strong className="text-ink">До сесії</strong> ти можеш
-                  повернутись у чат з AI — деяким підліткам це допомагає
-                  підготувати думки.
+                  <strong className="text-ink">До сесії</strong> ти можеш повернутись у чат з AI —
+                  деяким підліткам це допомагає підготувати думки.
                 </>
               }
             />

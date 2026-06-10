@@ -70,9 +70,7 @@ export function CalendarMockup({ onSelect }: CalendarMockupProps) {
                       onClick={() => handleClick(d.day, d.date, t)}
                       className={cn(
                         'rounded-lg px-1 py-1 font-mono text-[10px] transition-colors',
-                        isActive
-                          ? 'bg-accent text-white'
-                          : 'bg-bg text-ink hover:bg-accent/10',
+                        isActive ? 'bg-accent text-white' : 'bg-bg text-ink hover:bg-accent/10',
                       )}
                     >
                       {t}
@@ -86,14 +84,9 @@ export function CalendarMockup({ onSelect }: CalendarMockupProps) {
       </div>
 
       <p className="font-sans text-xs italic leading-relaxed text-inkSoft">
-        [PLACEHOLDER] тут буде embed Cal.com з реальними слотами Олени.
-        У Demo версії — мок-сітка для візуалізації потоку.
+        [PLACEHOLDER] тут буде embed Cal.com з реальними слотами Олени. У Demo версії — мок-сітка
+        для візуалізації потоку.
       </p>
     </div>
   );
 }
-
-// Експорт для перевірки тайпчекеру
-export type { CalendarMockupProps };
-// `WEEKDAYS` навмисно readonly — щоб case-у запобігти випадковій мутації.
-export { WEEKDAYS };

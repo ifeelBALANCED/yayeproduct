@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@ya-ye/ui';
 
 const SESSION_DURATION_MS = 25 * 60 * 1000; // 25 хвилин
-const WARNING_THRESHOLD_MS = 60 * 1000;      // попередження за 1 хвилину
+const WARNING_THRESHOLD_MS = 60 * 1000; // попередження за 1 хвилину
 
 interface SessionTimerProps {
   sessionId: string;

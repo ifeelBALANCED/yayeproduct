@@ -13,9 +13,9 @@ interface SpecialistCardProps {
 }
 
 const CONTACT_ICON_LABEL: Record<string, { label: string; title: string }> = {
-  telegram: { label: 'TG',    title: 'Доступно через Telegram' },
-  email:    { label: 'EMAIL', title: 'Доступно через email' },
-  form:     { label: 'FORM',  title: 'Доступна форма запису' },
+  telegram: { label: 'TG', title: 'Доступно через Telegram' },
+  email: { label: 'EMAIL', title: 'Доступно через email' },
+  form: { label: 'FORM', title: 'Доступна форма запису' },
 };
 
 export function SpecialistCard({ specialist: s, priority = false }: SpecialistCardProps) {
@@ -86,9 +86,7 @@ export function SpecialistCard({ specialist: s, priority = false }: SpecialistCa
 
         {/* CTA */}
         <div className="mt-auto flex items-center justify-between pt-2 font-sans text-sm text-accent">
-          <span className="transition-opacity group-hover:opacity-80">
-            Подивитись профіль
-          </span>
+          <span className="transition-opacity group-hover:opacity-80">Подивитись профіль</span>
           <ChevronRight size={16} strokeWidth={1.5} />
         </div>
       </div>

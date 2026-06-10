@@ -5,13 +5,8 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { buildSessionCookie } from '@/lib/session-token';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
-
-type AgeBand = '13-15' | '16-17' | '18-25';
-const VALID_AGE_BANDS: readonly AgeBand[] = ['13-15', '16-17', '18-25'] as const;
-
-function isValidAgeBand(v: unknown): v is AgeBand {
-  return typeof v === 'string' && (VALID_AGE_BANDS as readonly string[]).includes(v);
-}
+import { SessionsCreateRequestSchema } from '@ya-ye/contracts';
+import type { AgeBand } from '@ya-ye/method/system-prompt';
 
 // 201 + httpOnly HMAC-cookie володіння сесією (P0-5): лише власник cookie
 // зможе писати в /api/chat і читати /api/sessions/[id]/messages.
@@ -39,22 +34,27 @@ export async function POST(req: Request) {
     });
   }
 
-  let ageBand: AgeBand;
+  // Parse body через SessionsCreateRequestSchema (quality-gate §2.4)
+  let rawBody: unknown;
   try {
-    const body = (await req.json()) as { age_band?: unknown };
-    if (!isValidAgeBand(body.age_band)) {
-      return new Response(
-        JSON.stringify({ error: 'invalid or missing age_band' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
-    }
-    ageBand = body.age_band;
+    rawBody = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: 'invalid request' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  const parsed = SessionsCreateRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message ?? 'invalid request';
+    return new Response(JSON.stringify({ error: firstIssue }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const ageBand = parsed.data.age_band as AgeBand;
 
   // Fallback path — Supabase ще не сконфігурований. Демо-флоу і так працює
   // (client-state utrymują історію розмови), лише без DB-аудиту.

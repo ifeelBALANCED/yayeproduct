@@ -1,10 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: [
-    './src/**/*.{ts,tsx}',
-    '../../packages/ui/src/**/*.{ts,tsx}',
-  ],
+  content: ['./src/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -20,8 +17,8 @@ const config: Config = {
         divider: '#D9D0BD',
         // Island layers — мапа на 4 ФМ. Demo Day sprint v2.1.
         'island-foundation': '#A8B89A',
-        'island-bay':        '#D9A989',
-        'island-rock':       '#C2A878',
+        'island-bay': '#D9A989',
+        'island-rock': '#C2A878',
         'island-lighthouse': '#E8D5B7',
       },
       fontFamily: {

@@ -26,18 +26,19 @@ export default function LandingPage() {
       <section className="mx-auto flex h-[100dvh] max-w-6xl flex-col items-center gap-6 px-6 py-8 md:flex-row md:gap-12 md:py-10">
         <div className="flex flex-1 flex-col gap-4">
           <h1 className="font-serif text-4xl italic leading-tight text-ink md:text-5xl">
-            Важко на душі — <br />
-            а поговорити нема з ким?
+            Важко на душі — <br />а поговорити нема з ким?
           </h1>
 
           <p className="font-sans text-base leading-relaxed text-inkSoft">
-            Я Є — простір де можна розібратися що відбувається.
-            Без оцінок. Без порад. Просто розмова.
+            Я Є — простір де можна розібратися що відбувається. Без оцінок. Без порад. Просто
+            розмова.
           </p>
 
           {/* EU AI Act Art. 50 */}
           <p className="font-sans text-xs leading-relaxed text-inkSoft">
-            так, це алгоритм — не людина, не друг, не терапевт. він не симулює близькість і не прив&apos;язує. тільки тримає простір, щоб ти почув(ла) себе — і скеровує до живої людини, коли це важливо.
+            так, це алгоритм — не людина, не друг, не терапевт. він не симулює близькість і не
+            прив&apos;язує. тільки тримає простір, щоб ти почув(ла) себе — і скеровує до живої
+            людини, коли це важливо.
           </p>
 
           {/* Хвилина тут */}
@@ -66,9 +67,7 @@ export default function LandingPage() {
 
       {/* ── ЯК ЦЕ ПРАЦЮЄ ── */}
       <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-        <h2 className="font-serif text-3xl italic text-ink md:text-4xl">
-          як це працює
-        </h2>
+        <h2 className="font-serif text-3xl italic text-ink md:text-4xl">як це працює</h2>
 
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           <Step
@@ -92,13 +91,10 @@ export default function LandingPage() {
       {/* ── ЧИМ ВІДРІЗНЯЄМОСЬ (короткий блок) ── */}
       <section className="bg-bgSoft px-6 py-16 md:py-20">
         <div className="mx-auto max-w-3xl space-y-4">
-          <h2 className="font-serif text-2xl italic text-ink md:text-3xl">
-            чим відрізняємось
-          </h2>
+          <h2 className="font-serif text-2xl italic text-ink md:text-3xl">чим відрізняємось</h2>
           <p className="font-sans text-base leading-relaxed text-inkSoft">
-            Це не ChatGPT і не Replika. AI з рамкою екзистенційного аналізу —
-            не симулює стосунки, не утримує. Тримає простір, поки знайдеш
-            живу людину.
+            Це не ChatGPT і не Replika. AI з рамкою екзистенційного аналізу — не симулює стосунки,
+            не утримує. Тримає простір, поки знайдеш живу людину.
           </p>
         </div>
       </section>
@@ -116,10 +112,7 @@ export default function LandingPage() {
             <Link href="/privacy" className="hover:text-ink hover:underline">
               Приватність
             </Link>
-            <a
-              href="mailto:hello@ya-ye.app"
-              className="hover:text-ink hover:underline"
-            >
+            <a href="mailto:hello@ya-ye.app" className="hover:text-ink hover:underline">
               Зв&apos;язатись
             </a>
           </nav>

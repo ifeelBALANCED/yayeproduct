@@ -14,7 +14,9 @@ interface SessionTypeCardProps {
 export function SessionTypeCard({ specialistSlug, session: s }: SessionTypeCardProps) {
   return (
     <Link
-      href={`/specialists/${specialistSlug}/book/${s.type}` as `/specialists/${string}/book/${string}`}
+      href={
+        `/specialists/${specialistSlug}/book/${s.type}` as `/specialists/${string}/book/${string}`
+      }
       className={cn(
         'group relative flex flex-col gap-3 rounded-2xl p-5 transition-all active:opacity-90',
         s.recommended
@@ -35,9 +37,7 @@ export function SessionTypeCard({ specialistSlug, session: s }: SessionTypeCardP
         </p>
       </div>
 
-      <p className="flex-1 font-sans text-sm leading-relaxed text-inkSoft">
-        {s.description}
-      </p>
+      <p className="flex-1 font-sans text-sm leading-relaxed text-inkSoft">{s.description}</p>
 
       <div className="mt-2 flex items-center justify-between font-sans text-sm text-accent">
         <span className="transition-opacity group-hover:opacity-80">

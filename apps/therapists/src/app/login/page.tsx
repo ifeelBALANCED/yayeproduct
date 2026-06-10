@@ -11,9 +11,7 @@ export default function LoginPage() {
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <label className="font-mono text-xs uppercase tracking-wider text-inkSoft">
-              email
-            </label>
+            <label className="font-mono text-xs uppercase tracking-wider text-inkSoft">email</label>
             <input
               type="email"
               disabled
@@ -41,9 +39,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="text-center font-sans text-xs text-inkSoft">
-          верифікація фахівців — Phase 3
-        </p>
+        <p className="text-center font-sans text-xs text-inkSoft">верифікація фахівців — Phase 3</p>
       </div>
     </main>
   );

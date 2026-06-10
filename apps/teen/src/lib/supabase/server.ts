@@ -30,8 +30,5 @@ export function createClient() {
   // existing non-blocking inserts in route.ts working without crashing.
   const url = stripBom(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '');
   const key = stripBom(process.env.SUPABASE_SERVICE_ROLE_KEY ?? '');
-  return createSupabaseClient(
-    url || 'https://placeholder.supabase.co',
-    key || 'placeholder-key',
-  );
+  return createSupabaseClient(url || 'https://placeholder.supabase.co', key || 'placeholder-key');
 }

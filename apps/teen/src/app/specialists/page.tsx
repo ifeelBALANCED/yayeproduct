@@ -16,9 +16,9 @@ export default function SpecialistsPage() {
             Фахівці, з якими ми працюємо
           </h1>
           <p className="max-w-2xl font-sans text-base leading-relaxed text-inkSoft">
-            Якщо ти готовий(а) до розмови з живою людиною — ось ті, кого ми
-            перевірили методологічно. Можна почати з короткої 15-20 хвилинної
-            зустрічі, без коммітменту на повний курс.
+            Якщо ти готовий(а) до розмови з живою людиною — ось ті, кого ми перевірили
+            методологічно. Можна почати з короткої 15-20 хвилинної зустрічі, без коммітменту на
+            повний курс.
           </p>
         </div>
       </header>
@@ -26,13 +26,19 @@ export default function SpecialistsPage() {
       {/* «Як це працює» */}
       <section className="px-6 py-10 md:py-14">
         <div className="mx-auto max-w-5xl">
-          <h2 className="font-mono text-xs uppercase tracking-wider text-inkSoft">
-            як це працює
-          </h2>
+          <h2 className="font-mono text-xs uppercase tracking-wider text-inkSoft">як це працює</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <Step n="1" title="Обери фахівця" text="Подивись профілі, обери, з ким резонує." />
-            <Step n="2" title="Запиши на 15-20 хв" text="Discovery-call: знайомство і перевірка, чи комфортно з людиною." />
-            <Step n="3" title="Вирішуй, що далі" text="Жодних зобов'язань. Подобається — продовжуй. Ні — пробуй з іншим." />
+            <Step
+              n="2"
+              title="Запиши на 15-20 хв"
+              text="Discovery-call: знайомство і перевірка, чи комфортно з людиною."
+            />
+            <Step
+              n="3"
+              title="Вирішуй, що далі"
+              text="Жодних зобов'язань. Подобається — продовжуй. Ні — пробуй з іншим."
+            />
           </div>
         </div>
       </section>
@@ -64,9 +70,7 @@ export default function SpecialistsPage() {
       {/* Trust block */}
       <section className="border-t border-divider bg-bgSoft px-6 py-12 md:py-16">
         <div className="mx-auto max-w-3xl space-y-4">
-          <h2 className="font-serif text-2xl italic text-ink">
-            як ми обираємо фахівців
-          </h2>
+          <h2 className="font-serif text-2xl italic text-ink">як ми обираємо фахівців</h2>
           <ul className="space-y-2 font-sans text-base leading-relaxed text-ink">
             <li>· Активна професійна практика з підлітками і молоддю</li>
             <li>· Підтверджена освіта та (за наявності) ліцензія</li>
@@ -81,8 +85,8 @@ export default function SpecialistsPage() {
               className="text-accent underline-offset-2 hover:underline"
             >
               Олена Вовк
-            </Link>
-            {' '}— перевіряє кожного нового фахівця особисто.
+            </Link>{' '}
+            — перевіряє кожного нового фахівця особисто.
           </p>
         </div>
       </section>

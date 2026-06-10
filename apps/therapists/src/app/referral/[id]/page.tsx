@@ -16,11 +16,7 @@ const MOCK_SUMMARY = {
   flags: ['elevated anxiety', 'companionship drift'],
 };
 
-export default async function ReferralPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ReferralPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   return (
@@ -49,7 +45,10 @@ export default async function ReferralPage({
             { label: 'тривалість', value: MOCK_SUMMARY.duration },
             { label: 'mode найчастіший', value: '02' },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-2xl border border-divider bg-bgSoft px-4 py-3 text-center">
+            <div
+              key={label}
+              className="rounded-2xl border border-divider bg-bgSoft px-4 py-3 text-center"
+            >
               <p className="font-mono text-lg text-ink">{value}</p>
               <p className="font-sans text-xs text-inkSoft">{label}</p>
             </div>
@@ -84,9 +83,7 @@ export default async function ReferralPage({
         {/* Flags */}
         {MOCK_SUMMARY.flags.length > 0 && (
           <div className="rounded-2xl border border-divider bg-bgSoft px-4 py-3">
-            <p className="mb-2 font-mono text-xs uppercase tracking-wider text-inkSoft">
-              сигнали
-            </p>
+            <p className="mb-2 font-mono text-xs uppercase tracking-wider text-inkSoft">сигнали</p>
             <div className="flex flex-wrap gap-2">
               {MOCK_SUMMARY.flags.map((f) => (
                 <span

@@ -83,7 +83,9 @@ export default function BookingPage({
         setSubmitting(false);
         return;
       }
-      router.push(`/specialists/${slug}/book/${sessionType}/success?ch=${contactPreferred}` as never);
+      router.push(
+        `/specialists/${slug}/book/${sessionType}/success?ch=${contactPreferred}` as never,
+      );
     } catch (err) {
       console.error('[booking] submit failed', err);
       setErrorMsg('Мережева помилка. Спробуй ще раз або напиши на email.');
@@ -119,9 +121,9 @@ export default function BookingPage({
         {/* Demo notice */}
         <div className="mt-6 rounded-2xl border-l-4 border-accent bg-accent/5 px-5 py-4">
           <p className="font-sans text-sm leading-relaxed text-ink">
-            <strong>Це demo-стадія продукту.</strong> Реальне бронювання запрацює
-            після інтеграції з Cal.com. Зараз твоя заявка прийде {specialist.fullName.split(' ')[0]}{' '}
-            особисто, і вона зв&apos;яжеться з тобою через обраний канал для узгодження часу.
+            <strong>Це demo-стадія продукту.</strong> Реальне бронювання запрацює після інтеграції з
+            Cal.com. Зараз твоя заявка прийде {specialist.fullName.split(' ')[0]} особисто, і вона
+            зв&apos;яжеться з тобою через обраний канал для узгодження часу.
           </p>
         </div>
 
@@ -204,9 +206,7 @@ export default function BookingPage({
           {/* Contact value */}
           <div className="space-y-1.5">
             <label htmlFor="contact_value" className="block font-sans text-sm text-ink">
-              {contactPreferred === 'telegram'
-                ? 'Telegram username'
-                : 'Email'}
+              {contactPreferred === 'telegram' ? 'Telegram username' : 'Email'}
             </label>
             <input
               id="contact_value"
@@ -231,7 +231,9 @@ export default function BookingPage({
               required
               className="w-full rounded-2xl border border-divider bg-bgSoft px-4 py-3 font-sans text-base text-ink focus:border-accent/50 focus:outline-none"
             >
-              <option value="" disabled>Обери...</option>
+              <option value="" disabled>
+                Обери...
+              </option>
               <option value="13-15">13-15</option>
               <option value="16-17">16-17</option>
               <option value="18-25">18-25</option>
@@ -243,10 +245,9 @@ export default function BookingPage({
           {isMinor && (
             <div className="rounded-2xl border-l-4 border-accent bg-accent/5 px-5 py-4">
               <p className="font-sans text-sm leading-relaxed text-ink">
-                <strong>Тобі ще немає 18 років.</strong> Для запису на сесію
-                {' '}{specialist.fullName.split(' ')[0]} особисто обговорить з тобою цей крок.
-                У разі повної сесії може знадобитись згода батьків або законних
-                представників.
+                <strong>Тобі ще немає 18 років.</strong> Для запису на сесію{' '}
+                {specialist.fullName.split(' ')[0]} особисто обговорить з тобою цей крок. У разі
+                повної сесії може знадобитись згода батьків або законних представників.
               </p>
             </div>
           )}
@@ -254,7 +255,8 @@ export default function BookingPage({
           {/* Topic */}
           <div className="space-y-1.5">
             <label htmlFor="topic" className="block font-sans text-sm text-ink">
-              Що б ти хотів(ла) обговорити? <span className="text-inkSoft">(необов&apos;язково)</span>
+              Що б ти хотів(ла) обговорити?{' '}
+              <span className="text-inkSoft">(необов&apos;язково)</span>
             </label>
             <textarea
               id="topic"
@@ -271,7 +273,8 @@ export default function BookingPage({
           {session.type === 'thematic' && (
             <div className="space-y-1.5">
               <label htmlFor="ai_excerpt" className="block font-sans text-sm text-ink">
-                Фрагмент з твоєї розмови з AI <span className="text-inkSoft">(необов&apos;язково)</span>
+                Фрагмент з твоєї розмови з AI{' '}
+                <span className="text-inkSoft">(необов&apos;язково)</span>
               </label>
               <textarea
                 id="ai_excerpt"
@@ -287,11 +290,7 @@ export default function BookingPage({
 
           {/* Consents */}
           <div className="space-y-3 pt-2">
-            <Checkbox
-              checked={consentOffer}
-              onChange={setConsentOffer}
-              required
-            >
+            <Checkbox checked={consentOffer} onChange={setConsentOffer} required>
               Я погоджуюсь з{' '}
               <Link
                 href={'/offer' as `/${string}`}
@@ -301,13 +300,9 @@ export default function BookingPage({
               </Link>{' '}
               <span className="text-inkSoft">(документ у розробці)</span>
             </Checkbox>
-            <Checkbox
-              checked={consentContact}
-              onChange={setConsentContact}
-              required
-            >
-              {specialist.fullName.split(' ')[0]} може зв&apos;язатись зі мною
-              через обраний канал для узгодження часу
+            <Checkbox checked={consentContact} onChange={setConsentContact} required>
+              {specialist.fullName.split(' ')[0]} може зв&apos;язатись зі мною через обраний канал
+              для узгодження часу
             </Checkbox>
           </div>
 
@@ -338,9 +333,9 @@ export default function BookingPage({
               <>Discovery-call безкоштовний — оплата не потрібна.</>
             ) : (
               <>
-                <strong className="text-ink">Оплата:</strong> Зараз ми не приймаємо
-                платежі онлайн (Cal.com інтеграція в розробці). {specialist.fullName.split(' ')[0]}
-                {' '}надішле тобі реквізити після підтвердження слоту.
+                <strong className="text-ink">Оплата:</strong> Зараз ми не приймаємо платежі онлайн
+                (Cal.com інтеграція в розробці). {specialist.fullName.split(' ')[0]} надішле тобі
+                реквізити після підтвердження слоту.
               </>
             )}
           </p>
@@ -379,9 +374,7 @@ function RadioOption({
       />
       <span className="flex-1">
         <span className="block font-sans text-sm text-ink">{label}</span>
-        {hint && (
-          <span className="block font-sans text-xs text-inkSoft">{hint}</span>
-        )}
+        {hint && <span className="block font-sans text-xs text-inkSoft">{hint}</span>}
       </span>
     </label>
   );

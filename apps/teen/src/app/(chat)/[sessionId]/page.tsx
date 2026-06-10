@@ -11,6 +11,7 @@ import { ChatBubble } from '@/components/chat/ChatBubble';
 import { SpecialistRedirectInline } from '@/components/chat/SpecialistRedirectInline';
 import { cn } from '@ya-ye/ui';
 import { getExercise, type ExerciseId } from '@ya-ye/method/exercises';
+import { SseEventSchema, type ChatRequest } from '@ya-ye/contracts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,10 +114,7 @@ function SessionTimer({ onExpire }: { onExpire: () => void }) {
 
   return (
     <span
-      className={cn(
-        'font-mono text-[10px] tabular-nums',
-        isLow ? 'text-crisis' : 'text-inkSoft',
-      )}
+      className={cn('font-mono text-[10px] tabular-nums', isLow ? 'text-crisis' : 'text-inkSoft')}
     >
       {mm}:{ss}
     </span>
@@ -132,11 +130,7 @@ const UA_HOTLINES = [
   { name: 'Teenergizer', number: '7333', note: 'чат · безкоштовно' },
 ];
 
-export default function ChatPage({
-  params,
-}: {
-  params: Promise<{ sessionId: string }>;
-}) {
+export default function ChatPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
   const router = useRouter();
 
@@ -170,7 +164,12 @@ export default function ChatPage({
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sessions/${sessionId}/messages`)
-      .then((r) => r.json() as Promise<{ messages?: Array<{ role: 'user' | 'assistant'; content: string }> }>)
+      .then(
+        (r) =>
+          r.json() as Promise<{
+            messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
+          }>,
+      )
       .then((data) => {
         if (cancelled) return;
         const dbMessages = data.messages ?? [];
@@ -184,9 +183,15 @@ export default function ChatPage({
           );
         }
       })
-      .catch(() => { /* мовчазний fallback — UI працює без БД */ })
-      .finally(() => { if (!cancelled) setHydrated(true); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        /* мовчазний fallback — UI працює без БД */
+      })
+      .finally(() => {
+        if (!cancelled) setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId]);
 
   // Читаємо ім'я з sessionStorage один раз після mount
@@ -201,9 +206,7 @@ export default function ChatPage({
   useEffect(() => {
     if (hydrated && messages.length === 0) {
       const name = sessionStorage.getItem('user_name');
-      const greeting = name
-        ? `розкажи, як ти зараз, ${name}?`
-        : 'розкажи, як ти зараз?';
+      const greeting = name ? `розкажи, як ти зараз, ${name}?` : 'розкажи, як ти зараз?';
       setMessages([
         {
           id: 'greeting',
@@ -258,9 +261,7 @@ export default function ChatPage({
   }, []);
 
   const finalizeStream = useCallback((id: string) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, isStreaming: false } : m)),
-    );
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isStreaming: false } : m)));
     currentStreamId.current = null;
   }, []);
 
@@ -283,8 +284,8 @@ export default function ChatPage({
       .filter((m) => m.id !== 'greeting')
       .map((m) => ({ role: m.role, content: m.bubbles.join('\n\n').trim() }))
       .filter((m) => m.content.length > 0);
-    // turnNumber = prior user turns + this one. Drives the turn-1 disclosure.
-    const turnNumber = history.filter((m) => m.role === 'user').length + 1;
+    // §2.4: turnNumber — серверне поле, не передається у тілі запиту.
+    // Сервер рахує user-turns сам по history.
 
     // Add user message
     const userId = `u-${Date.now()}`;
@@ -299,27 +300,27 @@ export default function ChatPage({
     ]);
 
     try {
+      // Тіло запиту будується з inferred-типу ChatRequest (quality-gate §2.4).
+      // Поля turnNumber / sessionStartedAt / postCrisisMode — серверні, не передаємо.
+      const chatBody: ChatRequest = {
+        sessionId,
+        userMessage: text,
+        history,
+        // Demo-fallback для P0-3: коли Supabase не сконфігуровано, сервер
+        // не має age_band з БД — передаємо вибір з онбордингу (сервер валідує enum)
+        ageBand: (sessionStorage.getItem('age_band') as ChatRequest['ageBand']) ?? null,
+        userName: sessionStorage.getItem('user_name') ?? null,
+      };
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          userMessage: text,
-          history,
-          turnNumber,
-          sessionStartedAt: sessionStartedAtRef.current,
-          userName: sessionStorage.getItem('user_name') ?? null,
-          postCrisisMode,
-          // Demo-fallback для P0-3: коли Supabase не сконфігуровано, сервер
-          // не має age_band з БД — передаємо вибір з онбордингу (сервер валідує enum)
-          ageBand: sessionStorage.getItem('age_band') ?? null,
-        }),
+        body: JSON.stringify(chatBody),
       });
 
       const contentType = response.headers.get('content-type');
 
       if (contentType?.includes('application/json')) {
-        const data = await response.json() as { type: string; message?: string };
+        const data = (await response.json()) as { type: string; message?: string };
         if (data.type === 'crisis' && data.message) {
           setMessages((prev) =>
             prev.map((m) =>
@@ -358,8 +359,22 @@ export default function ChatPage({
         buffer = events.pop() ?? '';
         for (const event of events) {
           if (!event.startsWith('data: ')) continue;
-          const data = JSON.parse(event.slice(6)) as { type: string; text?: string };
-          if (data.type === 'token' && data.text) {
+          // SseEventSchema.safeParse замість голого JSON.parse:
+          // обрив стріму або невалідний chunk → пропускаємо без краша UI
+          // (quality-gate §2.4, S3: «обрив стріму → UI не зависає»).
+          let parsed;
+          try {
+            parsed = SseEventSchema.safeParse(JSON.parse(event.slice(6)));
+          } catch {
+            // Невалідний JSON — пропускаємо chunk
+            continue;
+          }
+          if (!parsed.success) {
+            // Невідомий або некоректний SSE-event — пропускаємо без краша
+            continue;
+          }
+          const data = parsed.data;
+          if (data.type === 'token') {
             appendToStream(assistantId, data.text);
           } else if (data.type === 'done') {
             finalizeStream(assistantId);
@@ -372,6 +387,7 @@ export default function ChatPage({
               ),
             );
           }
+          // type === 'crisis' обробляється через JSON Content-Type вище, не SSE
         }
       }
       // Stream ended — ensure the bubble is finalized even if 'done' event was missed
@@ -430,9 +446,11 @@ export default function ChatPage({
               );
             })}
             {/* [MODE:4] inline-блок — прибираємо під час і після кризи */}
-            {msg.role === 'assistant' && msg.hasModeRedirect && !msg.isStreaming && !crisisOpen && !postCrisisMode && (
-              <SpecialistRedirectInline />
-            )}
+            {msg.role === 'assistant' &&
+              msg.hasModeRedirect &&
+              !msg.isStreaming &&
+              !crisisOpen &&
+              !postCrisisMode && <SpecialistRedirectInline />}
 
             {/* Пост-кризова вправа */}
             {msg.postCrisisExercise && !showGroundingInChat && (
@@ -449,7 +467,9 @@ export default function ChatPage({
                   </p>
                 </button>
                 <button
-                  onClick={() => {/* просто продовжити — нічого не робимо */}}
+                  onClick={() => {
+                    /* просто продовжити — нічого не робимо */
+                  }}
                   className="w-full rounded-2xl px-4 py-2 font-sans text-sm text-inkSoft/60 underline-offset-2 hover:underline"
                 >
                   просто поговоримо
@@ -458,17 +478,19 @@ export default function ChatPage({
             )}
             {msg.postCrisisExercise && showGroundingInChat && (
               <div className="rounded-3xl border border-divider bg-bgSoft px-5 py-5">
-                <Grounding54321 onDone={() => {
-                  setShowGroundingInChat(false);
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: `after-grounding-${Date.now()}`,
-                      role: 'assistant',
-                      bubbles: ['ти тут. як зараз?'],
-                    },
-                  ]);
-                }} />
+                <Grounding54321
+                  onDone={() => {
+                    setShowGroundingInChat(false);
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: `after-grounding-${Date.now()}`,
+                        role: 'assistant',
+                        bubbles: ['ти тут. як зараз?'],
+                      },
+                    ]);
+                  }}
+                />
               </div>
             )}
           </div>

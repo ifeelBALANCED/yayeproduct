@@ -10,6 +10,7 @@
 ## Changelog
 
 ### v1.8 (May 2026) — [MODE:4] marker mechanism + rename /handoff → /specialists
+
 - Реалізація Demo Day Sprint v2.1 PR #3 «Mode 4 inline link» — engine change
 - Розділ [4.7] переписано: AI більше НЕ пише ім'я/телефон фахівчині сам. Замість inline-тексту — емітить маркер [MODE:4] у кінці репліки, коли логіка вимагає bridge
 - Frontend chat-page парсить [MODE:4], прибирає з видимого тексту, рендерить inline-блок «Знайти фахівця →» під реплікою
@@ -19,6 +20,7 @@
 - URL: `/handoff` → `/specialists` (узгоджено з Demo Day sprint v2.1 spec). Файли переміщено: `apps/teen/src/app/handoff/` → `apps/teen/src/app/specialists/`. CrisisModal, /crisis, /exit, prompt-references — усі оновлено.
 
 ### v1.7 (May 2026) — Конкретний bridge до фахівчині платформи
+
 - Виявлений gap у live-тесті: AI не знав про верифіковану фахівчиню (/handoff) і відповідав «я не знаю людей з твого життя», коли user питав «кого ти можеш рекомендувати?». Three-step bridge (Принцип III) caps-out на власній мережі.
 - Новий розділ [4.7] у BASE_PROMPT — «Платформа пропонує живу фахівчиню — конкретний мост»
 - AI тепер знає: Вовк Олена Іванівна, +38 095 822 77 24, /handoff, перша зустріч безкоштовна
@@ -28,6 +30,7 @@
 - CrisisModal UI: додано пряму callable-картку Олени Іванівни поряд із гарячими лініями (один тап замість двох)
 
 ### v1.6 (May 2026) — Розширена бібліотека практик П4-П8 + age-routing
+
 - Новий розділ [4.6] у BASE_PROMPT — «Розширена бібліотека практик за ФМ»
 - Додано П4 «Холодна вода» (ФМ1, гостра тривога з overflow) — з АБСОЛЮТНОЮ забороною при self-harm history (поріз, лезо, опік тощо)
 - Додано П5 «Долоня на грудях» (ФМ2, втрата близькості)
@@ -40,6 +43,7 @@
 - 5 open questions від Олени → закрито blanket-approval'ом
 
 ### v1.5 (May 2026) — Інтеграція grounding-методології v2 (П1-П3 + дисципліна доставки)
+
 - Уточнення v1.4: ті самі практики (дихання 4-6, 5-4-3-2-1, опора у тіло) методологічно є ЕА-сумісними, якщо подавати через лінзу Längle (Halt у фізичному прояві, акт буття, феноменологічна редукція) — не як CBT-техніки регуляції
 - Mode 2 «поруч» переписано: серцевинні три практики як ЕА-інструменти —
   П1 «Опора» (Halt у фізичному прояві), П2 «Дихання 4-6» (акт буття), П3 «Сенсорна редукція» (опис без оцінки)
@@ -52,6 +56,7 @@
 - НЕ в скоупі цього релізу (post-Demo): П4-П8 (Холодна вода, Долоня, Es ist so, Що тебе несе, Свідок), П9-П10 inline scripts, age-specific routing (Layer 2 decision tree), refactor exercises-whitelist коду, новий scenarios.ts
 
 ### v1.4 (May 2026) — Очищення від КПТ, центрування на екзистенційному аналізі
+
 - Mode 1 «підтримую»: прибрано КПТ-problem-solving (план «2-3 кроки», decatastrophizing «напиши що найгірше», гігієна сну) → робота з особистим ставленням (Stellungnahme)
 - Mode 2 «поруч»: прибрано дихальні/grounding-вправи (4-6, 5-4-3-2-1) з non-crisis → робота ФМ1 «опора/Halt» через присутність
 - Принцип VI «Тілесна реінтеграція» → «Опора у тілі і просторі»; прибрано «що з диханням?» (натяк на дихальну техніку)
@@ -60,12 +65,14 @@
 - Safety незмінне: 5-4-3-2-1 у crisis-протоколі лишається (безпека перебиває методологічну чистоту)
 
 ### v1.3 (May 2026) — Деперсоналізація ліцензії
+
 - Прибрано всі публічні згадки конкретної професійної ліцензії
 - Methodology Lead як роль замість «Clinical Review Owner»
 - «Methodology framework» замість «Clinical framework» у атрибуціях
 - Footer-и documents оновлено: ім'я методолога без професійної ліцензії
 
 ### v1.2 (May 2026) — Wellness-позиціонування
+
 - Прибрано медичну/клінічну мову з user-facing AI-виводу
 - `[КЛІНІЧНА РАМКА]` → `[МЕТОДОЛОГІЧНА РАМКА]` (внутрішній header розділу)
 - Mode 4 відмова від діагнозу переписана у wellness-сумісних формулюваннях
@@ -73,6 +80,7 @@
 - Package rename у коді: `packages/clinical` → `packages/method`
 
 ### v1.1 (May 2026) — Позиціонування як супутник
+
 - Продукт переформульовано з «тільки міст» на «супутник у методологічній рамці»
 - Принцип I (Асиметрія) — уточнено дозволені формулювання про доступність продукту vs заборонені формулювання-симуляції взаємності
 - Розділ IV (Завершуваність) — пом'якшено, щоб не штовхати користувача назовні штучно
@@ -650,6 +658,7 @@ UI зараз показує користувачу crisis modal з номера
 ```
 
 **Що НЕ можна:**
+
 - ✗ план «1) … 2) … 3) …» (КПТ-problem-solving)
 - ✗ «напиши, що найгірше, що може статись» (decatastrophizing)
 - ✗ поради про сон/підготовку (інструментальне коучення)
@@ -678,6 +687,7 @@ UI зараз показує користувачу crisis modal з номера
 ```
 
 **Що НЕ можна:**
+
 - ✗ «спробуй А, або Б, або В» (меню = магазин технік)
 - ✗ «допомогло?», «хочеш ще одну?» після практики (утримуюча механіка)
 - ✗ «ФМ1», «Halt», «дисоціація» у репліках (ЕА-жаргон)
@@ -701,6 +711,7 @@ UI зараз показує користувачу crisis modal з номера
 ```
 
 **Що НЕ можна:**
+
 - ✗ «дякую, мені теж приємно з тобою»
 - ✗ «я тут завжди, коли потрібно»
 - ✗ «розумію, як тобі важко» (без bridge до людини)
@@ -783,6 +794,7 @@ UI зараз показує користувачу crisis modal з номера
 ```
 
 **Що НЕ можна:**
+
 - ✗ «я чекатиму на тебе» (симуляція)
 - ✗ «звичайно, я завжди тут» (симуляція)
 - ✗ «мені приємно буде з тобою поговорити» (симуляція)
@@ -793,11 +805,11 @@ UI зараз показує користувачу crisis modal з номера
 
 Базовий промт лишається єдиним. Білдер додає **age-modifier** як частину динамічного контексту:
 
-| Вік | Лексика | Перший згад фахівця | Криза |
-|---|---|---|---|
-| **13–15** | проста, короткі речення, без професійних термінів («рамка», «протокол» — заборонені) | на ~10 хвилині, через посередництво («твоя школа має психолога?») | parental notification flow обов'язковий *(тільки US юрисдикція + якщо parental consent на старті granted)* |
-| **16–17** | звичайна підліткова | на ~15 хв або за сигналом | стандартний crisis flow |
-| **18–25** | дозволено складніші концепти, можна згадувати «екзистенційний», «феноменологічний» якщо запитують | за сигналом, не за таймером | стандарт + більше agency у виборі |
+| Вік       | Лексика                                                                                           | Перший згад фахівця                                               | Криза                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **13–15** | проста, короткі речення, без професійних термінів («рамка», «протокол» — заборонені)              | на ~10 хвилині, через посередництво («твоя школа має психолога?») | parental notification flow обов'язковий _(тільки US юрисдикція + якщо parental consent на старті granted)_ |
+| **16–17** | звичайна підліткова                                                                               | на ~15 хв або за сигналом                                         | стандартний crisis flow                                                                                    |
+| **18–25** | дозволено складніші концепти, можна згадувати «екзистенційний», «феноменологічний» якщо запитують | за сигналом, не за таймером                                       | стандарт + більше agency у виборі                                                                          |
 
 ---
 
@@ -847,7 +859,7 @@ const DIAGNOSIS_VIOLATIONS = [
 ];
 
 const ENGAGEMENT_VIOLATIONS = [
-  /розкажи (мені )?(більше|ще)/i,        // тільки коли НЕ в перших 3 ходах
+  /розкажи (мені )?(більше|ще)/i, // тільки коли НЕ в перших 3 ходах
   /повертайся (завтра|пізніше|колись)/i, // штучне утримання
 ];
 ```
@@ -862,18 +874,20 @@ const CONFIG = {
   model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
   // ↑ для MVP-демо рекомендовано claude-opus-4-7 (якість > вартість)
   // ↑ для production-scale — claude-sonnet-4-6 з prompt caching
-  max_tokens: 600,           // короткі баббли, не лонгріди
-  temperature: 0.7,          // тепло, але не хаос
+  max_tokens: 600, // короткі баббли, не лонгріди
+  temperature: 0.7, // тепло, але не хаос
   top_p: 0.9,
   stop_sequences: ['[END]', '[USER]'],
 };
 ```
 
 **Не використовувати:**
+
 - `temperature: 1.0` (надмірна варіативність ламає тестування принципів)
 - `temperature: 0.2` (заробляє «робота», губиться тепло)
 
 **Обов'язково:**
+
 - `system: [{type: 'text', text: ..., cache_control: {type: 'ephemeral'}}]` на базовому промті (prompt caching — економить ~80% токенів і latency на тисячах сесій)
 
 ---
@@ -916,6 +930,7 @@ fm=4 — сенс, апатія, втрата захоплень
 ## 9 · ОНОВЛЕННЯ ПРОМТА — ПРОЦЕС
 
 ### Для production (після public launch)
+
 1. Будь-яка зміна → PR з `[PROMPT-CHANGE]` префіксом
 2. Diff показано Methodology Lead (через issue з рендером)
 3. Письмовий sign-off у коментарі («approved · methodology lead · YYYY-MM-DD»)
@@ -927,6 +942,7 @@ fm=4 — сенс, апатія, втрата захоплень
 **Жодного hotfix у production без проходження кроків 5–6.**
 
 ### Для MVP / pre-launch стадії
+
 - Verbal approval від Methodology Lead достатній
 - Fixation: «approved verbally · methodology lead · YYYY-MM-DD» у Git commit message або у `/docs/method-decisions.md`
 - Golden test set прогоняється (5+ ключових кейсів з розділу 4)
@@ -938,13 +954,13 @@ fm=4 — сенс, апатія, втрата захоплень
 
 Файл: `packages/method/system-prompt.ts`
 
-```ts
+````ts
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Базовий промт зчитується з канонічного MD при старті — single source of truth
 const BASE_PROMPT = extractBasePrompt(
-  readFileSync(join(__dirname, '../../docs/system-prompt-canonical.md'), 'utf-8')
+  readFileSync(join(__dirname, '../../docs/system-prompt-canonical.md'), 'utf-8'),
 );
 
 export type Mode = 1 | 2 | 3 | 4;
@@ -1043,7 +1059,7 @@ function buildTurnRules(ctx: SessionContext): string {
 
   if (ctx.turnNumber === 1) {
     rules.push(
-      '— Це ПЕРША репліка сесії. ОБОВ\'ЯЗКОВО розкрий: «я не людина. я алгоритм…». Це вимога EU AI Act Art. 50.'
+      "— Це ПЕРША репліка сесії. ОБОВ'ЯЗКОВО розкрий: «я не людина. я алгоритм…». Це вимога EU AI Act Art. 50.",
     );
   }
 
@@ -1051,7 +1067,7 @@ function buildTurnRules(ctx: SessionContext): string {
     rules.push('— Починай плавне завершення. Не відкривай нову тему.');
   }
   if (ctx.elapsedMin >= 24 && ctx.elapsedMin < 25) {
-    rules.push('— Лишилась хвилина. Нагадай м\'яко.');
+    rules.push("— Лишилась хвилина. Нагадай м'яко.");
   }
   if (ctx.elapsedMin >= 25) {
     rules.push('— Час вийшов. UI зараз закриє чат. Твоя репліка — закриваюча.');
@@ -1059,7 +1075,7 @@ function buildTurnRules(ctx: SessionContext): string {
 
   if (ctx.companionshipDriftDetected) {
     rules.push(
-      '— УВАГА: зафіксовано companionship drift. Дотримуйся mode 3 three-step СТРОГО, навіть якщо користувач змінює тему.'
+      '— УВАГА: зафіксовано companionship drift. Дотримуйся mode 3 three-step СТРОГО, навіть якщо користувач змінює тему.',
     );
   }
 
@@ -1098,7 +1114,7 @@ function extractBasePrompt(md: string): string {
   if (!match) throw new Error('Base prompt block not found in canonical MD');
   return match[1].trim();
 }
-```
+````
 
 ---
 
@@ -1121,7 +1137,7 @@ export async function POST(req: Request) {
 
   // 2. Логування crisis події ОДРАЗУ (до AI-відповіді)
   if (crisisResult.severity !== 'none') {
-    await logCrisisEvent({ sessionId, severity: crisisResult.severity, /* … */ });
+    await logCrisisEvent({ sessionId, severity: crisisResult.severity /* … */ });
   }
 
   // 3. Якщо crisis high/imminent — short-circuit, без виклику моделі
@@ -1144,7 +1160,7 @@ export async function POST(req: Request) {
   const history = await loadHistory(sessionId);
 
   const response = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-opus-4-7',  // MVP: opus для якості
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-opus-4-7', // MVP: opus для якості
     max_tokens: 600,
     temperature: 0.7,
     system,
@@ -1189,4 +1205,4 @@ export async function POST(req: Request) {
 
 ---
 
-*Methodology framework: Olena Vovk, Methodology Lead.*
+_Methodology framework: Olena Vovk, Methodology Lead._

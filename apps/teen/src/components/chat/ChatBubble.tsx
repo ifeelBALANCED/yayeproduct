@@ -37,18 +37,11 @@ export function ChatBubble({ role, content, mode, isStreaming }: ChatBubbleProps
         <div
           className={cn(
             'rounded-2xl px-4 py-3',
-            isUser
-              ? 'bg-accent text-white'
-              : 'bg-bgSoft text-ink',
+            isUser ? 'bg-accent text-white' : 'bg-bgSoft text-ink',
           )}
         >
           {/* AI-репліки — малі літери, за дизайном */}
-          <p
-            className={cn(
-              'font-sans text-base leading-relaxed',
-              !isUser && 'lowercase',
-            )}
-          >
+          <p className={cn('font-sans text-base leading-relaxed', !isUser && 'lowercase')}>
             {content}
             {isStreaming && (
               <span className="ml-1 inline-block h-3 w-0.5 animate-pulse bg-current opacity-70" />

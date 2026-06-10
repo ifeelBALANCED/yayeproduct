@@ -49,14 +49,10 @@ export default async function SpecialistProfilePage({
           </div>
 
           <div className="flex flex-col justify-center">
-            <h1 className="font-serif text-3xl italic text-ink md:text-4xl">
-              {s.fullName}
-            </h1>
+            <h1 className="font-serif text-3xl italic text-ink md:text-4xl">{s.fullName}</h1>
             <p className="mt-1 font-sans text-base text-inkSoft">{s.title}</p>
             {s.subtitle && (
-              <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                {s.subtitle}
-              </p>
+              <p className="font-mono text-xs uppercase tracking-wider text-accent">{s.subtitle}</p>
             )}
 
             {/* Hero-quote — виокремлено accent-кольором */}
@@ -86,17 +82,13 @@ export default async function SpecialistProfilePage({
 
         {/* Methodology connection */}
         <section className="mt-12 space-y-4 rounded-3xl border-l-4 border-accent bg-bgSoft px-6 py-6">
-          <h2 className="font-serif text-xl italic text-ink">
-            Мій зв&apos;язок з «Я Є»
-          </h2>
-          <p className="font-sans text-base leading-relaxed text-ink">
-            {s.methodologyConnection}
-          </p>
+          <h2 className="font-serif text-xl italic text-ink">Мій зв&apos;язок з «Я Є»</h2>
+          <p className="font-sans text-base leading-relaxed text-ink">{s.methodologyConnection}</p>
           <p className="font-sans text-sm leading-relaxed text-inkSoft">
-            Це означає: коли ми зустрінемось на сесії, я вже знаю рамку, у якій
-            ти думав(ла) до зустрічі. Ми починаємо не з нуля. Це <strong>економить
-            час</strong> і дає <strong>глибший старт</strong> — особливо якщо
-            хочеш обговорити конкретний епізод з AI-розмови.
+            Це означає: коли ми зустрінемось на сесії, я вже знаю рамку, у якій ти думав(ла) до
+            зустрічі. Ми починаємо не з нуля. Це <strong>економить час</strong> і дає{' '}
+            <strong>глибший старт</strong> — особливо якщо хочеш обговорити конкретний епізод з
+            AI-розмови.
           </p>
         </section>
 
@@ -105,11 +97,7 @@ export default async function SpecialistProfilePage({
           <h2 className="font-serif text-2xl italic text-ink">типи сесій</h2>
           <div className="grid gap-3 md:grid-cols-3">
             {s.sessionTypes.map((session) => (
-              <SessionTypeCard
-                key={session.type}
-                specialistSlug={s.slug}
-                session={session}
-              />
+              <SessionTypeCard key={session.type} specialistSlug={s.slug} session={session} />
             ))}
           </div>
         </section>
@@ -118,8 +106,8 @@ export default async function SpecialistProfilePage({
         <section className="mt-12 space-y-4">
           <h2 className="font-serif text-2xl italic text-ink">як зв&apos;язатись</h2>
           <p className="font-sans text-sm leading-relaxed text-inkSoft">
-            Можеш обрати найзручніший спосіб. Для деяких легше написати у
-            месенджер, ніж заповнювати форму. Це нормально.
+            Можеш обрати найзручніший спосіб. Для деяких легше написати у месенджер, ніж заповнювати
+            форму. Це нормально.
           </p>
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -166,12 +154,12 @@ export default async function SpecialistProfilePage({
         <section className="mt-12 rounded-3xl bg-bgSoft p-6">
           <h2 className="font-serif text-xl italic text-ink">що кажуть клієнти</h2>
           <p className="mt-3 font-sans text-sm leading-relaxed text-inkSoft">
-            Тут будуть відгуки клієнтів — додамо після кількох сесій у форматі
-            «Я Є» (з письмовою згодою кожного).
+            Тут будуть відгуки клієнтів — додамо після кількох сесій у форматі «Я Є» (з письмовою
+            згодою кожного).
           </p>
           <p className="mt-2 font-sans text-xs italic leading-relaxed text-inkSoft">
-            Зараз ми у Demo-стадії. Перші 3-5 клієнтів — це дослідницька
-            когорта, з якою ми працюємо особливо уважно.
+            Зараз ми у Demo-стадії. Перші 3-5 клієнтів — це дослідницька когорта, з якою ми працюємо
+            особливо уважно.
           </p>
         </section>
       </div>
@@ -182,9 +170,7 @@ export default async function SpecialistProfilePage({
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="font-mono text-[10px] uppercase tracking-wider text-inkSoft">
-        {label}
-      </p>
+      <p className="font-mono text-[10px] uppercase tracking-wider text-inkSoft">{label}</p>
       <p className="mt-0.5 font-sans text-sm text-ink">{value}</p>
     </div>
   );
@@ -218,9 +204,7 @@ function ContactMethod({
     <article
       className={cn(
         'flex flex-col gap-2 rounded-2xl p-5',
-        primary
-          ? 'border-2 border-accent bg-accent/5'
-          : 'border border-divider bg-bgSoft',
+        primary ? 'border-2 border-accent bg-accent/5' : 'border border-divider bg-bgSoft',
       )}
     >
       <header className="flex items-center justify-between">
@@ -235,9 +219,7 @@ function ContactMethod({
       <p className="font-mono text-sm text-ink break-all">{handle}</p>
 
       {disclaimer && (
-        <p className="font-sans text-xs italic leading-relaxed text-inkSoft">
-          {disclaimer}
-        </p>
+        <p className="font-sans text-xs italic leading-relaxed text-inkSoft">{disclaimer}</p>
       )}
 
       <a
@@ -245,9 +227,7 @@ function ContactMethod({
         {...externalProps}
         className={cn(
           'mt-auto inline-flex items-center gap-2 rounded-xl px-4 py-2.5 font-sans text-sm transition-opacity active:opacity-80',
-          primary
-            ? 'bg-accent text-white'
-            : 'border border-accent/40 bg-bg text-accent',
+          primary ? 'bg-accent text-white' : 'border border-accent/40 bg-bg text-accent',
         )}
       >
         {icon}
