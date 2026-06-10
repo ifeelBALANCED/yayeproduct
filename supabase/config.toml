@@ -1,6 +1,9 @@
 # Supabase local dev config
 # Документація: https://supabase.com/docs/reference/cli/config
 
+# Обов'язкове поле для supabase CLI (`supabase start` падає без нього)
+project_id = "ya-ye"
+
 [api]
 port = 54321
 

@@ -343,18 +343,14 @@ jobs:
   s5-security:
     name: S5 · Security (SAST)
     runs-on: ubuntu-latest
+    # semgrep/semgrep-action@v2 не існує (action deprecated) —
+    # офіційний шлях: container-образ semgrep + semgrep scan.
+    container:
+      image: semgrep/semgrep:1.165.0
     steps:
       - uses: actions/checkout@v4
 
       - name: SAST scan (semgrep)
-        uses: semgrep/semgrep-action@v2
-        with:
-          # OWASP top-10 ruleset + кастомні правила проєкту (.semgrep/)
-          # docs/quality-gate.md §S5: будь-яке знахід → error → fail
-          config: >-
-            p/owasp-top-ten
-            .semgrep/
-        env:
-          # SEMGREP_APP_TOKEN: не обов'язковий для OSS scan.
-          # Якщо є — підвантажує Semgrep Pro rules.
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        # OWASP top-10 ruleset + кастомні правила проєкту (.semgrep/)
+        # docs/quality-gate.md §S5: будь-яка знахідка → --error → fail
+        run: semgrep scan --config p/owasp-top-ten --config .semgrep/ --error --metrics=off
