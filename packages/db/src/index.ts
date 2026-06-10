@@ -1,6 +1,14 @@
 export { createServerClient, createBrowserClient } from './client';
 export type {
   Database,
+  Json,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Enums,
+  CompositeTypes,
+} from './types';
+export type {
   AgeBand,
   Jurisdiction,
   SessionEndReason,
@@ -10,4 +18,4 @@ export type {
   ConsentType,
   MessageRole,
   ProposedSlot,
-} from './types';
+} from './aliases';

@@ -148,8 +148,8 @@ jobs:
       - name: Run tests (unit + integration)
         env:
           SUPABASE_TEST_URL: 'http://127.0.0.1:54321'
-          SUPABASE_TEST_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7URIqUfev2Y864T4SuTHrevNyYJqFnug8tA'
-          SUPABASE_TEST_SERVICE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0'
+          SUPABASE_TEST_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+          SUPABASE_TEST_SERVICE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
           # SESSION_TOKEN_SECRET: dev-фолбек активний у тестах (NODE_ENV != production)
           ANTHROPIC_PROMPT_VERSION: 'v1.8'
         run: pnpm --filter @ya-ye/teen test
@@ -277,6 +277,64 @@ jobs:
             apps/teen/playwright-report/
           if-no-files-found: warn
 
+  # ─── S7 · Build + budget ─────────────────────────────────────────────────
+  # docs/quality-gate.md §3 S7: turbo build --affected зелений,
+  # size-limit chat <= 160 kB gz, Lighthouse CI perf >= 90, a11y = 100.
+  # PWA-аудит (SW не кешує /api/* і SSE) — e2e/pwa-sw.spec.ts, ганяється у s3-e2e.
+  s7-budget:
+    name: 'S7 · Build + budget'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 потрібен для turbo --affected (порівняння з base SHA)
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # docs/quality-gate.md §3 S7: turbo build --affected — обов'язково зелений.
+      # TURBO_SCM_BASE — базова SHA для визначення affected-пакетів (turbo 2.x).
+      - name: Build (turbo --affected)
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || 'HEAD^' }}
+        run: pnpm turbo run build --affected
+
+      # Budget і LHCI потребують apps/teen/.next навіть коли teen не affected.
+      # Кеш-хіт якщо вже збілджено у попередньому кроці.
+      - name: Ensure teen build
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: pnpm turbo run build --filter=@ya-ye/teen
+
+      # docs/quality-gate.md §3 S7: chat <= 160 kB gz.
+      # pnpm budget визначено у кореневому package.json → scripts/check-bundle-budget.mjs
+      - name: Bundle budget (chat <= 160 kB gz)
+        run: pnpm budget
+
+      # docs/quality-gate.md §3 S7: Lighthouse CI perf >= 90, a11y = 100.
+      # PWA-аудит SW (не кешує /api/*) — окремий тест у s3-e2e (e2e/pwa-sw.spec.ts).
+      - name: Lighthouse CI (perf >= 90, a11y = 100)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        run: pnpm lighthouse
+
   # ─── S5 · Security (SAST) ────────────────────────────────────────────────
   # docs/quality-gate.md §3 S5: semgrep OWASP top-10 + кастомні правила.
   # Кастомні правила (заборона SERVICE_ROLE_KEY поза server/adapters,
@@ -285,18 +343,14 @@ jobs:
   s5-security:
     name: S5 · Security (SAST)
     runs-on: ubuntu-latest
+    # semgrep/semgrep-action@v2 не існує (action deprecated) —
+    # офіційний шлях: container-образ semgrep + semgrep scan.
+    container:
+      image: semgrep/semgrep:1.165.0
     steps:
       - uses: actions/checkout@v4
 
       - name: SAST scan (semgrep)
-        uses: semgrep/semgrep-action@v2
-        with:
-          # OWASP top-10 ruleset + кастомні правила проєкту (.semgrep/)
-          # docs/quality-gate.md §S5: будь-яке знахід → error → fail
-          config: >-
-            p/owasp-top-ten
-            .semgrep/
-        env:
-          # SEMGREP_APP_TOKEN: не обов'язковий для OSS scan.
-          # Якщо є — підвантажує Semgrep Pro rules.
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        # OWASP top-10 ruleset + кастомні правила проєкту (.semgrep/)
+        # docs/quality-gate.md §S5: будь-яка знахідка → --error → fail
+        run: semgrep scan --config p/owasp-top-ten --config .semgrep/ --error --metrics=off

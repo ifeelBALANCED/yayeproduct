@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "depcruise": "depcruise apps packages --config .dependency-cruiser.cjs",
     "knip": "knip",
-    "dup": "jscpd ."
+    "dup": "jscpd .",
+    "budget": "node scripts/check-bundle-budget.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

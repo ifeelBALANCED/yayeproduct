@@ -67,11 +67,37 @@ const nextConfig = {
   },
 };
 
+// quality-gate §3 S7: SW не повинен кешувати /api/* (включно з SSE-стрімом /api/chat).
+// extendDefaultRuntimeCaching: true — дозволяє перевизначити дефолтне правило за cacheName.
+// Запис з cacheName:"apis" замінює дефолтний NetworkFirst → NetworkOnly (без кешу).
+// buildExcludes: виключаємо /_next/static/chunks/app/api/**  — це серверні route-бандли
+// Next.js App Router, вони не є реальними URL-ендпоінтами і не повинні потрапляти
+// до precache-маніфесту (інакше SW намагається prefetch неіснуючих URL).
 const withPWAConfig = withPWA({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
+  extendDefaultRuntimeCaching: true,
+  workboxOptions: {
+    // Виключаємо серверні route-бандли App Router з precache-маніфесту.
+    // workbox GenerateSW.exclude порівнює з іменами webpack-чанків (без /_next/),
+    // тому паттерн без провідного слешу: static/chunks/app/api/**/*.js
+    exclude: [/static\/chunks\/app\/api\//],
+    runtimeCaching: [
+      {
+        // Перевизначаємо дефолтне правило cacheName:"apis" → NetworkOnly.
+        // Причина: /api/* містить SSE-стрім (/api/chat) і мутуючі ендпоінти —
+        // кешування GET-відповідей порушує коректність даних (quality-gate §3 S7).
+        urlPattern: ({ sameOrigin, url: { pathname } }) =>
+          sameOrigin && pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/callback'),
+        handler: 'NetworkOnly',
+        options: {
+          cacheName: 'apis',
+        },
+      },
+    ],
+  },
 });
 
 export default withNextIntl(withPWAConfig(nextConfig));

@@ -43,7 +43,7 @@ export function SpecialistCard({ specialist: s, priority = false }: SpecialistCa
           <h3 className="font-serif text-xl italic text-ink">{s.fullName}</h3>
           <p className="mt-0.5 font-sans text-sm text-inkSoft">{s.title}</p>
           {s.subtitle && (
-            <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-inkSoft">
               {s.subtitle}
             </p>
           )}
@@ -76,7 +76,7 @@ export function SpecialistCard({ specialist: s, priority = false }: SpecialistCa
               <span
                 key={m}
                 title={info.title}
-                className="rounded-lg bg-bg px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-accent"
+                className="rounded-lg bg-bg px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-inkSoft"
               >
                 {info.label}
               </span>
@@ -85,7 +85,8 @@ export function SpecialistCard({ specialist: s, priority = false }: SpecialistCa
         </div>
 
         {/* CTA */}
-        <div className="mt-auto flex items-center justify-between pt-2 font-sans text-sm text-accent">
+        {/* text-ink: accent на bgSoft — 2.4:1, fail WCAG 4.5:1 (S7 Lighthouse a11y) */}
+        <div className="mt-auto flex items-center justify-between pt-2 font-sans text-sm text-ink">
           <span className="transition-opacity group-hover:opacity-80">Подивитись профіль</span>
           <ChevronRight size={16} strokeWidth={1.5} />
         </div>
