@@ -13,8 +13,24 @@ interface Referral {
 }
 
 const MOCK_REFERRALS: Referral[] = [
-  { id: 1, status: 'new', urgency: 'normal', theme: 'стосунки', age: '16-17', ago: '5 хв тому', modes: [1, 1, 2, 3] },
-  { id: 2, status: 'new', urgency: 'urgent', theme: 'тривога', age: '13-15', ago: '23 хв тому', modes: [2, 2, 2] },
+  {
+    id: 1,
+    status: 'new',
+    urgency: 'normal',
+    theme: 'стосунки',
+    age: '16-17',
+    ago: '5 хв тому',
+    modes: [1, 1, 2, 3],
+  },
+  {
+    id: 2,
+    status: 'new',
+    urgency: 'urgent',
+    theme: 'тривога',
+    age: '13-15',
+    ago: '23 хв тому',
+    modes: [2, 2, 2],
+  },
   { id: 3, status: 'accepted', theme: 'майбутнє', age: '18-25', ago: 'вчора', modes: [1, 1, 1] },
   { id: 4, status: 'completed', theme: 'сенс', age: '16-17', ago: '3 дні тому', modes: [1, 2, 1] },
 ];
@@ -73,7 +89,9 @@ export default function DashboardPage() {
                   )}
                 </div>
                 {/* theme може бути null у реальних рефералах — theme picker видалено */}
-                <p className="mt-1.5 font-sans text-base text-ink">{r.theme ?? 'без визначеної теми'}</p>
+                <p className="mt-1.5 font-sans text-base text-ink">
+                  {r.theme ?? 'без визначеної теми'}
+                </p>
                 <p className="font-sans text-xs text-inkSoft">
                   вік {r.age} · {r.modes.length} ходів · {r.ago}
                 </p>

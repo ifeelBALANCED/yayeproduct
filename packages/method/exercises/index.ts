@@ -1,6 +1,12 @@
 import whitelist from '../../../docs/exercises-whitelist.json';
 
-export type ExerciseId = 'breathing-4-6' | 'grounding-54321' | 'body-scan-short' | 'rain' | 'values-compass' | 'meaning-anchor';
+export type ExerciseId =
+  | 'breathing-4-6'
+  | 'grounding-54321'
+  | 'body-scan-short'
+  | 'rain'
+  | 'values-compass'
+  | 'meaning-anchor';
 
 export interface Exercise {
   id: ExerciseId;

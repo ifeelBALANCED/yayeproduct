@@ -19,9 +19,7 @@ export default function PrivacyPage() {
           >
             <ChevronLeft size={20} strokeWidth={1.5} />
           </Link>
-          <h1 className="font-serif text-2xl italic text-ink">
-            Приватність
-          </h1>
+          <h1 className="font-serif text-2xl italic text-ink">Приватність</h1>
         </div>
       </header>
 
@@ -32,8 +30,8 @@ export default function PrivacyPage() {
           </p>
 
           <p className="font-sans text-base leading-relaxed text-ink">
-            Повний текст політики приватності фіналізується разом з юристом
-            до публічного запуску продукту.
+            Повний текст політики приватності фіналізується разом з юристом до публічного запуску
+            продукту.
           </p>
 
           <p className="font-sans text-base leading-relaxed text-ink">

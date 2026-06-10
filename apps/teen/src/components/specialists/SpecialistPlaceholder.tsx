@@ -18,9 +18,7 @@ export function SpecialistPlaceholder({ message, cta, href }: SpecialistPlacehol
 
   const content = (
     <>
-      <p className="font-sans text-sm leading-relaxed text-inkSoft">
-        {message}
-      </p>
+      <p className="font-sans text-sm leading-relaxed text-inkSoft">{message}</p>
       <div className="mt-auto flex items-center justify-between font-sans text-sm text-accent">
         <span className="transition-opacity group-hover:opacity-80">{cta}</span>
         <ChevronRight size={16} strokeWidth={1.5} />
@@ -29,8 +27,12 @@ export function SpecialistPlaceholder({ message, cta, href }: SpecialistPlacehol
   );
 
   return isExternal ? (
-    <a href={href} className={className}>{content}</a>
+    <a href={href} className={className}>
+      {content}
+    </a>
   ) : (
-    <Link href={href as `/${string}`} className={className}>{content}</Link>
+    <Link href={href as `/${string}`} className={className}>
+      {content}
+    </Link>
   );
 }

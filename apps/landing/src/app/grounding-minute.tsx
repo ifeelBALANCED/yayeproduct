@@ -3,18 +3,20 @@
 import { useState } from 'react';
 
 const STEPS = [
-  { count: 5, sense: 'побач',    prompt: 'речей, які ти зараз бачиш' },
+  { count: 5, sense: 'побач', prompt: 'речей, які ти зараз бачиш' },
   { count: 4, sense: 'торкнись', prompt: 'речі, яких ти можеш торкнутись' },
-  { count: 3, sense: 'почуй',    prompt: 'звуки, які ти чуєш' },
-  { count: 2, sense: 'відчуй',   prompt: 'запахи навколо' },
-  { count: 1, sense: 'спробуй',  prompt: 'смак, який відчуваєш' },
+  { count: 3, sense: 'почуй', prompt: 'звуки, які ти чуєш' },
+  { count: 2, sense: 'відчуй', prompt: 'запахи навколо' },
+  { count: 1, sense: 'спробуй', prompt: 'смак, який відчуваєш' },
 ] as const;
 
 export function GroundingMinute() {
   const [step, setStep] = useState<number>(0); // 0 = not started, 1–5 = steps, 6 = feedback, 7 = done
   const [feedback, setFeedback] = useState<'helped' | 'neutral' | null>(null);
 
-  function start() { setStep(1); }
+  function start() {
+    setStep(1);
+  }
 
   function next() {
     setStep((s) => (s < STEPS.length ? s + 1 : STEPS.length + 1));
@@ -27,7 +29,9 @@ export function GroundingMinute() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ result: value }),
-    }).catch(() => {/* silent */});
+    }).catch(() => {
+      /* silent */
+    });
   }
 
   const currentStep = step >= 1 && step <= STEPS.length ? STEPS[step - 1] : null;
@@ -37,15 +41,11 @@ export function GroundingMinute() {
 
   return (
     <div className="rounded-2xl border border-divider bg-bgSoft px-4 py-4">
-      <p className="font-mono text-xs uppercase tracking-wider text-accent">
-        хвилина тут
-      </p>
+      <p className="font-mono text-xs uppercase tracking-wider text-accent">хвилина тут</p>
 
       {step === 0 && (
         <>
-          <p className="mt-2 font-serif text-xl italic text-ink">
-            Озирнись. Це займе хвилину.
-          </p>
+          <p className="mt-2 font-serif text-xl italic text-ink">Озирнись. Це займе хвилину.</p>
           <p className="mt-1 font-sans text-xs leading-relaxed text-inkSoft">
             П&apos;ять чуттів — крок за кроком. Без реєстрації.
           </p>
@@ -88,9 +88,7 @@ export function GroundingMinute() {
 
       {showFeedback && (
         <>
-          <p className="mt-3 font-sans text-sm text-ink">
-            Як тобі?
-          </p>
+          <p className="mt-3 font-sans text-sm text-ink">Як тобі?</p>
           <div className="mt-3 flex gap-3">
             <button
               onClick={() => handleFeedback('helped')}

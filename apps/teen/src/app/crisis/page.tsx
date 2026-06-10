@@ -94,9 +94,7 @@ export default function CrisisPage() {
 
         {/* Якщо хочеш поговорити з фахівцем */}
         <div className="rounded-3xl border border-divider bg-bgSoft px-5 py-4">
-          <p className="font-sans text-sm text-inkSoft">
-            хочеш поговорити з реальним фахівцем?
-          </p>
+          <p className="font-sans text-sm text-inkSoft">хочеш поговорити з реальним фахівцем?</p>
           <Link
             href="/specialists"
             className="mt-2 block font-sans text-sm text-accent underline-offset-2 hover:underline"

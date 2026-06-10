@@ -24,9 +24,7 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {children}
-      </div>
+      <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
 }

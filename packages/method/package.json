@@ -13,14 +13,16 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3"
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.0.0",
     "vitest": "^2.1.8"
   }
 }

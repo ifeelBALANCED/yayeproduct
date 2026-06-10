@@ -1,0 +1,38 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": []
+    },
+    "apps/teen": {
+      "entry": ["src/app/**/{page,layout,route,loading,error,not-found,template}.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["eslint", "eslint-config-next"]
+    },
+    "apps/landing": {
+      "entry": ["src/app/**/{page,layout,route,loading,error,not-found,template}.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["eslint", "eslint-config-next"]
+    },
+    "apps/therapists": {
+      "entry": ["src/app/**/{page,layout,route,loading,error,not-found,template}.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["eslint", "eslint-config-next"]
+    },
+    "packages/method": {
+      "project": ["**/*.ts"]
+    },
+    "packages/contracts": {
+      "project": ["**/*.ts"]
+    },
+    "packages/db": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/ui": {
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  },
+  "ignore": ["apps/teen/src/components/chat/SessionTimer.tsx"],
+  "ignoreExportsUsedInFile": true
+}

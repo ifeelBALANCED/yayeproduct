@@ -3,7 +3,6 @@ import { matchScenario, matchAllScenarios } from '../src/matchScenario';
 import { SCENARIOS } from '../src/scenarios';
 
 describe('matchScenario — FM1 scenarios', () => {
-
   // ── fm1-no-space ──────────────────────────────────────────────────────────
 
   it('тригериться на «зайвий»', () => {

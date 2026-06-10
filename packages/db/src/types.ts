@@ -24,7 +24,10 @@ export interface Database {
           last_seen_at: string;
           deleted_at: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at' | 'last_seen_at'>;
+        Insert: Omit<
+          Database['public']['Tables']['users']['Row'],
+          'id' | 'created_at' | 'last_seen_at'
+        >;
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
       };
       sessions: {
@@ -39,7 +42,10 @@ export interface Database {
           fm_dominant: number | null;
           graduation_completed: boolean;
         };
-        Insert: Omit<Database['public']['Tables']['sessions']['Row'], 'id' | 'started_at' | 'graduation_completed'>;
+        Insert: Omit<
+          Database['public']['Tables']['sessions']['Row'],
+          'id' | 'started_at' | 'graduation_completed'
+        >;
         Update: Partial<Database['public']['Tables']['sessions']['Insert']>;
       };
       messages: {
@@ -55,7 +61,10 @@ export interface Database {
           flagged_for_review: boolean;
           prompt_version: string | null; // added in migration 002, default bumped to 'v1.4' in 003
         };
-        Insert: Omit<Database['public']['Tables']['messages']['Row'], 'id' | 'created_at' | 'flagged_for_review'>;
+        Insert: Omit<
+          Database['public']['Tables']['messages']['Row'],
+          'id' | 'created_at' | 'flagged_for_review'
+        >;
         Update: Partial<Database['public']['Tables']['messages']['Insert']>;
       };
       crisis_events: {
@@ -96,7 +105,10 @@ export interface Database {
           active: boolean;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['therapists']['Row'], 'id' | 'created_at' | 'active' | 'free_first_session'>;
+        Insert: Omit<
+          Database['public']['Tables']['therapists']['Row'],
+          'id' | 'created_at' | 'active' | 'free_first_session'
+        >;
         Update: Partial<Database['public']['Tables']['therapists']['Insert']>;
       };
       referrals: {
@@ -119,7 +131,10 @@ export interface Database {
           accepted_slot: string | null;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['referrals']['Row'], 'id' | 'created_at' | 'status' | 'urgency' | 'summary_approved_by_teen'>;
+        Insert: Omit<
+          Database['public']['Tables']['referrals']['Row'],
+          'id' | 'created_at' | 'status' | 'urgency' | 'summary_approved_by_teen'
+        >;
         Update: Partial<Database['public']['Tables']['referrals']['Insert']>;
       };
       consent_log: {

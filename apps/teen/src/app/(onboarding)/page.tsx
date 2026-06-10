@@ -80,9 +80,7 @@ export default function OnboardingPage() {
       <main className="flex min-h-[100dvh] flex-col items-center justify-between bg-bg px-6 py-12">
         <div className="flex w-full max-w-sm flex-1 flex-col justify-center gap-8">
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl italic text-ink">
-              як до тебе звертатись?
-            </h2>
+            <h2 className="font-serif text-3xl italic text-ink">як до тебе звертатись?</h2>
             <p className="font-sans text-sm leading-relaxed text-inkSoft">
               ім’я, нікнейм, псевдонім — або нічого.
               <br />
@@ -96,7 +94,9 @@ export default function OnboardingPage() {
               type="text"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleNameSubmit();
+              }}
               maxLength={32}
               placeholder="Аня · Кіт · xyz · sol_7 ..."
               className={cn(
@@ -144,9 +144,7 @@ export default function OnboardingPage() {
     return (
       <main className="flex min-h-[100dvh] flex-col items-center justify-between bg-bg px-6 py-12">
         <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <h1 className="font-serif text-[4.5rem] italic leading-none text-ink">
-            Я є
-          </h1>
+          <h1 className="font-serif text-[4.5rem] italic leading-none text-ink">Я є</h1>
           <p className="max-w-xs font-sans text-base leading-relaxed text-inkSoft">
             простір, поки знайдеш живу людину
           </p>
@@ -180,9 +178,7 @@ export default function OnboardingPage() {
       <div className="flex w-full max-w-sm flex-1 flex-col justify-center gap-8">
         <div className="space-y-2">
           <h2 className="font-serif text-3xl italic text-ink">скільки тобі років?</h2>
-          <p className="font-sans text-sm text-inkSoft">
-            це впливає на те, як я відповідаю
-          </p>
+          <p className="font-sans text-sm text-inkSoft">це впливає на те, як я відповідаю</p>
         </div>
 
         <div className="space-y-3">
@@ -198,9 +194,7 @@ export default function OnboardingPage() {
               )}
             >
               <span>{label}</span>
-              {selected === value && (
-                <span className="font-mono text-xs text-accent">вибрано</span>
-              )}
+              {selected === value && <span className="font-mono text-xs text-accent">вибрано</span>}
             </button>
           ))}
         </div>
@@ -208,8 +202,8 @@ export default function OnboardingPage() {
         {selected === '13-15' && (
           <div className="rounded-2xl bg-bgSoft px-4 py-3">
             <p className="font-sans text-sm leading-relaxed text-inkSoft">
-              якщо тобі 13–15, батьки або опікун мають знати, що ти тут.
-              ти можеш продовжити — але подумай, чи є поруч дорослий, якому ти довіряєш.
+              якщо тобі 13–15, батьки або опікун мають знати, що ти тут. ти можеш продовжити — але
+              подумай, чи є поруч дорослий, якому ти довіряєш.
             </p>
           </div>
         )}
@@ -221,9 +215,7 @@ export default function OnboardingPage() {
           disabled={!selected}
           className={cn(
             'flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-sans text-base font-medium transition-all',
-            selected
-              ? 'bg-accent text-white active:opacity-80'
-              : 'bg-divider text-inkSoft',
+            selected ? 'bg-accent text-white active:opacity-80' : 'bg-divider text-inkSoft',
           )}
         >
           далі

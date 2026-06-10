@@ -5,6 +5,7 @@ import { validateAsymmetry } from '@ya-ye/method/principles/asymmetry';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { verifySessionCookie } from '@/lib/session-token';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { ChatRequestSchema } from '@ya-ye/contracts';
 import type { SessionContext, AgeBand, Jurisdiction } from '@ya-ye/method/system-prompt';
 
 // Crisis short-circuit message — точно за canonical golden 4.5 + section 4.5
@@ -14,10 +15,8 @@ const CRISIS_MESSAGE = 'стоп. зупинись на секунду.\n\nя х
 
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// Ліміт довжини user-повідомлення: захист від token-stuffing у Anthropic API
-// (P0-5). UI-textarea і так не передбачає довших повідомлень.
-const MAX_MESSAGE_CHARS = 2000;
+// VALID_AGE_BANDS / VALID_JURISDICTIONS — використовуються для валідації DB-значень
+// (не client-input: вхідні поля тепер валідує ChatRequestSchema).
 const VALID_AGE_BANDS: readonly AgeBand[] = ['13-15', '16-17', '18-25'] as const;
 // DB-колонка jurisdiction — вільний text; HOTLINES індексується цим union,
 // тому невалідне значення з БД мусить деградувати до 'UA', а не падати.
@@ -53,72 +52,50 @@ export async function POST(req: Request) {
 }
 
 async function _handlePost(req: Request) {
-  // Parse body — guard against empty / malformed JSON before any logic
-  let sessionId: string;
-  let userMessage: string;
-  let clientHistory: ChatTurn[];
-  let clientTurnNumber: number | null;
-  let clientSessionStartedAt: number | null;
-  let clientUserName: string | null;
-  let clientPostCrisisMode: boolean;
-  let clientAgeBand: AgeBand | null;
+  // Parse body через ChatRequestSchema (quality-gate §2.4).
+  // §2.4: turnNumber / sessionStartedAt / postCrisisMode — серверні поля,
+  // з клієнта НЕ приймаються; схема .strict() відхилить їх із 400.
+  let rawBody: unknown;
   try {
-    const body = (await req.json()) as {
-      sessionId?: string;
-      userMessage?: string;
-      history?: unknown;
-      turnNumber?: unknown;
-      sessionStartedAt?: unknown;
-      userName?: unknown;
-      postCrisisMode?: unknown;
-      ageBand?: unknown;
-    };
-    sessionId = body.sessionId ?? '';
-    userMessage = body.userMessage ?? '';
-    // History is sent from the client (React state) so the dialogue stays
-    // continuous even before Supabase persistence is wired up. Sanitize it.
-    clientHistory = Array.isArray(body.history)
-      ? body.history
-          .filter(
-            (m): m is ChatTurn =>
-              !!m &&
-              (m.role === 'user' || m.role === 'assistant') &&
-              typeof m.content === 'string' &&
-              m.content.trim().length > 0 &&
-              m.content.length <= MAX_MESSAGE_CHARS,
-          )
-          .slice(-20)
-      : [];
-    clientTurnNumber =
-      typeof body.turnNumber === 'number' && body.turnNumber > 0
-        ? Math.floor(body.turnNumber)
-        : null;
-    // sessionStartedAt drives elapsedMin → activates session-end turn rules (4.8/4.9).
-    // Client-supplied timestamp is fine for MVP (no security implications).
-    clientSessionStartedAt =
-      typeof body.sessionStartedAt === 'number' && body.sessionStartedAt > 0
-        ? body.sessionStartedAt
-        : null;
-    clientUserName =
-      typeof body.userName === 'string' && body.userName.trim().length > 0
-        ? body.userName.trim().slice(0, 32)
-        : null;
-    clientPostCrisisMode = body.postCrisisMode === true;
-    clientAgeBand =
-      typeof body.ageBand === 'string' &&
-      (VALID_AGE_BANDS as readonly string[]).includes(body.ageBand)
-        ? (body.ageBand as AgeBand)
-        : null;
+    rawBody = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: 'invalid request' }), { status: 400 });
   }
 
-  if (!sessionId || !UUID_RE.test(sessionId) || !userMessage.trim()) {
-    return new Response(JSON.stringify({ error: 'invalid request' }), { status: 400 });
+  const parsed = ChatRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message ?? 'invalid request';
+    return new Response(JSON.stringify({ error: firstIssue }), { status: 400 });
   }
-  if (userMessage.length > MAX_MESSAGE_CHARS) {
-    return jsonError('message too long', 400);
-  }
+
+  const {
+    sessionId,
+    userMessage,
+    history: rawHistory,
+    ageBand: clientAgeBand,
+    userName: rawUserName,
+  } = parsed.data;
+
+  // Додаткова нормалізація: фільтруємо порожні turns та обмежуємо sliding window до 20.
+  // Схема вже гарантує max 40 і max 2000 символів на turn.
+  const clientHistory: ChatTurn[] = rawHistory
+    .filter((m) => m.content.trim().length > 0)
+    .slice(-20);
+
+  // userName — trim + обрізка до 32 (схема не trim-ить)
+  const clientUserName: string | null =
+    rawUserName && rawUserName.trim().length > 0 ? rawUserName.trim() : null;
+
+  // §2.4: turnNumber падає back до підрахунку user-turns у history (нижче).
+  // §2.4: sessionStartedAt — сервер є джерелом істини; elapsed = 0 коли немає
+  // DB-факту (якість-gate §2.4 вимагає сервер, а не клієнт, визначав elapsed).
+  const clientTurnNumber: number | null = null;
+  // §2.4: postCrisisMode — серверне поле; не приймається з клієнта.
+  // У поточній фазі завжди false (postCrisis-стан буде read із DB у Phase 2).
+  const clientPostCrisisMode = false;
+  // §2.4: sessionStartedAt — не приймається з клієнта (doc виграє над demo-convenience).
+  // elapsed = 0 коли немає DB-started_at; сесія-таймер UI незалежний від цього.
+  const clientSessionStartedAt: number | null = null;
 
   // P0-5: підтвердження володіння сесією — HMAC-cookie, виданий /api/sessions.
   // Без нього будь-хто зі знанням UUID писав би в чужу сесію (IDOR).
@@ -128,7 +105,10 @@ async function _handlePost(req: Request) {
 
   // P0-5: rate limit — кожен виклик коштує грошей (Anthropic API).
   const ip = clientIp(req);
-  if (!rateLimit(`chat:ip:${ip}`, 20, 60_000) || !rateLimit(`chat:session:${sessionId}`, 15, 60_000)) {
+  if (
+    !rateLimit(`chat:ip:${ip}`, 20, 60_000) ||
+    !rateLimit(`chat:session:${sessionId}`, 15, 60_000)
+  ) {
     return jsonError('too many requests', 429);
   }
 
@@ -150,7 +130,12 @@ async function _handlePost(req: Request) {
   // Server-side факти сесії (P0-3): age_band/jurisdiction/started_at читаються
   // з БД, а не з клієнта. Demo-режим (без Supabase) — fallback на валідовані
   // клієнтські значення нижче.
-  const facts: SessionFacts = { userId: null, ageBand: null, jurisdiction: null, startedAtMs: null };
+  const facts: SessionFacts = {
+    userId: null,
+    ageBand: null,
+    jurisdiction: null,
+    startedAtMs: null,
+  };
   if (supabase) {
     type SessionRow = {
       user_id: string | null;
@@ -206,11 +191,16 @@ async function _handlePost(req: Request) {
   // Sticky: if history had elevated/high and current is none, keep history level as elevated.
   // We downgrade history contribution by one level so a single old message doesn't perpetually
   // block the session, but we do preserve awareness.
-  const stickyLevel: Record<string, string> = { none: 'none', elevated: 'elevated', high: 'elevated', imminent: 'elevated' };
+  const stickyLevel: Record<string, string> = {
+    none: 'none',
+    elevated: 'elevated',
+    high: 'elevated',
+    imminent: 'elevated',
+  };
   const effectiveCrisisLevel =
     crisis.severity !== 'none'
       ? crisis.severity
-      : (stickyLevel[historyCrisisLevel] ?? 'none') as typeof crisis.severity;
+      : ((stickyLevel[historyCrisisLevel] ?? 'none') as typeof crisis.severity);
 
   // 2. Save user message FIRST — його id потрібен для crisis_events.trigger_message_id
   let userMessageId: string | null = null;
@@ -247,10 +237,9 @@ async function _handlePost(req: Request) {
 
   // 4. High/imminent crisis → return JSON signal, skip streaming
   if (crisis.severity === 'high' || crisis.severity === 'imminent') {
-    return new Response(
-      JSON.stringify({ type: 'crisis', message: CRISIS_MESSAGE }),
-      { headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ type: 'crisis', message: CRISIS_MESSAGE }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // 5. Build the message array for Anthropic from the client-sent history.
@@ -267,8 +256,8 @@ async function _handlePost(req: Request) {
     messages.push({ role: 'user', content: userMessage });
   }
 
-  // turnNumber drives the turn-1 EU AI Act disclosure rule. Prefer the client's
-  // value; fall back to counting user turns in the assembled array.
+  // turnNumber drives the turn-1 EU AI Act disclosure rule.
+  // §2.4: clientTurnNumber завжди null (серверне поле) — рахуємо user-turns у history.
   const userTurnCount = clientTurnNumber ?? messages.filter((m) => m.role === 'user').length;
 
   // 6. Build session context
@@ -297,11 +286,14 @@ async function _handlePost(req: Request) {
     companionshipDriftDetected: false,
     // Визначаємо чи вправа вже пропонувалась — по маркерах в history
     // В кризі скидаємо прапор — заземлення завжди дозволено для де-ескалації
-    exerciseOfferedInSession: effectiveCrisisLevel === 'none'
-      ? clientHistory.some(
-          (m) => m.role === 'assistant' && /\[(ВПРАВА|ЗАЗЕМЛЕННЯ|ТІЛО|RAIN|КОМПАС|ЯКІР)/.test(m.content),
-        )
-      : false,
+    exerciseOfferedInSession:
+      effectiveCrisisLevel === 'none'
+        ? clientHistory.some(
+            (m) =>
+              m.role === 'assistant' &&
+              /\[(ВПРАВА|ЗАЗЕМЛЕННЯ|ТІЛО|RAIN|КОМПАС|ЯКІР)/.test(m.content),
+          )
+        : false,
     crisisLevel: effectiveCrisisLevel as typeof crisis.severity,
     hotlinesShown: [],
     userName: clientUserName,
@@ -325,10 +317,7 @@ async function _handlePost(req: Request) {
         });
 
         for await (const event of anthropicStream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
+          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
             const token = event.delta.text;
             fullResponse += token;
             const sseChunk = `data: ${JSON.stringify({ type: 'token', text: token })}\n\n`;

@@ -65,4 +65,4 @@ Crisis — three-move logic + номери довіри. Перебиває вс
 
 ---
 
-*Methodology framework: Olena Vovk, Methodology Lead.*
+_Methodology framework: Olena Vovk, Methodology Lead._

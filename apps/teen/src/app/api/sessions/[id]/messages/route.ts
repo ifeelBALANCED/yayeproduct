@@ -11,15 +11,13 @@
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { verifySessionCookie } from '@/lib/session-token';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { MessagesResponseSchema } from '@ya-ye/contracts';
 
 type Turn = { role: 'user' | 'assistant'; content: string; created_at: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;
 
   if (!sessionId || !UUID_RE.test(sessionId)) {
@@ -48,7 +46,8 @@ export async function GET(
   // Supabase ще не сконфігурований — повертаємо порожньо, UI відштовхується
   // від client-state (greeting). Це коректний fallback, не помилка.
   if (!isSupabaseConfigured()) {
-    return new Response(JSON.stringify({ messages: [], persisted: false }), {
+    const body = MessagesResponseSchema.parse({ messages: [], persisted: false });
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -65,7 +64,8 @@ export async function GET(
   if (error) {
     console.warn('[messages.GET] supabase error:', error.message);
     // Тут теж віддаємо порожньо — UI має продовжувати працювати
-    return new Response(JSON.stringify({ messages: [], persisted: false }), {
+    const body = MessagesResponseSchema.parse({ messages: [], persisted: false });
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -74,13 +74,13 @@ export async function GET(
   const messages: Turn[] = (data ?? [])
     .filter(
       (m): m is Turn =>
-        !!m &&
-        (m.role === 'user' || m.role === 'assistant') &&
-        typeof m.content === 'string',
+        !!m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string',
     )
     .map((m) => ({ role: m.role, content: m.content, created_at: m.created_at }));
 
-  return new Response(JSON.stringify({ messages, persisted: true }), {
+  // MessagesResponseSchema.parse — дешева runtime-гарантія контракту (quality-gate §2.4)
+  const body = MessagesResponseSchema.parse({ messages, persisted: true });
+  return new Response(JSON.stringify(body), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });

@@ -18,6 +18,7 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
+      "dependsOn": [],
       "outputs": ["coverage/**"]
     }
   }

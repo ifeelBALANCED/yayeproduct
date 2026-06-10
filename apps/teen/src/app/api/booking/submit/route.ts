@@ -53,20 +53,20 @@ export async function POST(req: Request) {
   if (body.consent_contact !== true) errors.push('consent_contact required');
 
   if (errors.length > 0) {
-    return new Response(
-      JSON.stringify({ error: 'validation failed', details: errors }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ error: 'validation failed', details: errors }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Перевіряємо що фахівець + sessionType існують у нашому TS-каталозі
   const specialist = getSpecialistBySlug(body.specialist_slug!);
   const session = specialist ? getSessionType(specialist, body.session_type!) : undefined;
   if (!specialist || !session) {
-    return new Response(
-      JSON.stringify({ error: 'specialist or session type not found' }),
-      { status: 404, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ error: 'specialist or session type not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Fallback: Supabase не сконфігурований → друкуємо в лог, повертаємо success
@@ -80,10 +80,10 @@ export async function POST(req: Request) {
       age: body.user_age_band,
       topic: body.topic ?? null,
     });
-    return new Response(
-      JSON.stringify({ success: true, persisted: false }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, persisted: false }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Persistent шлях: треба знайти specialist_id за slug у БД
@@ -98,10 +98,10 @@ export async function POST(req: Request) {
     // Якщо Supabase сконфігурований, але specialists-таблиця не засіяна —
     // ми не блокуємо UX; падаємо в fallback
     console.warn('[booking.submit] specialist not found in DB, using fallback:', spErr?.message);
-    return new Response(
-      JSON.stringify({ success: true, persisted: false }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, persisted: false }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const { data: br, error: brErr } = await supabase
@@ -125,17 +125,17 @@ export async function POST(req: Request) {
     console.error('[booking.submit] insert failed:', brErr?.message);
     // Не показуємо юзеру технічну помилку — повертаємо success, бо
     // для нього demo-флоу важливіший за DB-аудит
-    return new Response(
-      JSON.stringify({ success: true, persisted: false }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ success: true, persisted: false }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // TODO Phase G: відправити нотифікацію Олені (Telegram bot або email)
   // TODO Phase G: відправити confirmation клієнту у обраний канал
 
-  return new Response(
-    JSON.stringify({ success: true, persisted: true, booking_id: br.id }),
-    { status: 201, headers: { 'Content-Type': 'application/json' } },
-  );
+  return new Response(JSON.stringify({ success: true, persisted: true, booking_id: br.id }), {
+    status: 201,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

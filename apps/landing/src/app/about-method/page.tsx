@@ -11,8 +11,8 @@ const APP_BASE =
 
 const LAYER_BG: Record<string, string> = {
   'island-foundation': 'bg-island-foundation/20',
-  'island-bay':        'bg-island-bay/20',
-  'island-rock':       'bg-island-rock/20',
+  'island-bay': 'bg-island-bay/20',
+  'island-rock': 'bg-island-rock/20',
   'island-lighthouse': 'bg-island-lighthouse/30',
 };
 
@@ -28,25 +28,19 @@ export default function AboutMethodPage() {
           >
             <ChevronLeft size={20} strokeWidth={1.5} />
           </Link>
-          <h1 className="font-serif text-2xl italic text-ink">
-            як ми думаємо про переживання
-          </h1>
+          <h1 className="font-serif text-2xl italic text-ink">як ми думаємо про переживання</h1>
         </div>
       </header>
 
       <section className="mx-auto max-w-6xl px-6 py-12 md:py-16">
-        <h2 className="font-serif text-3xl italic text-ink md:text-4xl">
-          хто або що я є?
-        </h2>
+        <h2 className="font-serif text-3xl italic text-ink md:text-4xl">хто або що я є?</h2>
         <p className="mt-6 max-w-2xl font-sans text-lg leading-relaxed text-inkSoft">
-          Я — алгоритм. Не людина, не друг, не терапевт. Я не симулюю
-          близькість і не прив&apos;язую. Я існую, щоб тримати простір —
-          поки ти знайдеш живу людину.
+          Я — алгоритм. Не людина, не друг, не терапевт. Я не симулюю близькість і не
+          прив&apos;язую. Я існую, щоб тримати простір — поки ти знайдеш живу людину.
         </p>
         <p className="mt-4 max-w-2xl font-sans text-lg leading-relaxed text-inkSoft">
-          Я-острів — це чотири шари того, як людина переживає себе у світі.
-          Спирається на екзистенційний аналіз Альфріда Лєнгле — підхід, що
-          питає не «що з тобою», а «де ти зараз».
+          Я-острів — це чотири шари того, як людина переживає себе у світі. Спирається на
+          екзистенційний аналіз Альфріда Лєнгле — підхід, що питає не «що з тобою», а «де ти зараз».
         </p>
 
         <div className="mt-12 flex justify-center">
@@ -57,20 +51,13 @@ export default function AboutMethodPage() {
       {/* 4 шари — окрема секція для кожного */}
       <div className="space-y-0">
         {ISLAND_LAYERS.map((layer, idx) => (
-          <section
-            key={layer.fm}
-            className={`${LAYER_BG[layer.color]} px-6 py-16 md:py-20`}
-          >
+          <section key={layer.fm} className={`${LAYER_BG[layer.color]} px-6 py-16 md:py-20`}>
             <div className="mx-auto max-w-3xl space-y-4">
               <p className="font-mono text-xs uppercase tracking-wider text-inkSoft">
                 ФМ{layer.fm} · {layer.metaphor}
               </p>
-              <h2 className="font-serif text-3xl italic text-ink md:text-4xl">
-                {layer.name}
-              </h2>
-              <p className="font-sans text-lg leading-relaxed text-ink">
-                {layer.longText}
-              </p>
+              <h2 className="font-serif text-3xl italic text-ink md:text-4xl">{layer.name}</h2>
+              <p className="font-sans text-lg leading-relaxed text-ink">{layer.longText}</p>
               <p className="font-sans text-sm leading-relaxed text-inkSoft">
                 приклади тем: <span className="text-ink">{layer.example}</span>
               </p>

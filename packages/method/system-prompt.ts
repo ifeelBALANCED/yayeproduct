@@ -224,7 +224,8 @@ const HOTLINES: Record<Jurisdiction, { anonymous: string[]; specialist: string }
       '116 111 — дитяча лінія довіри · 24/7 · безкоштовно · анонімно',
       '7333 — Teenergizer чат · для підлітків · анонімно',
     ],
-    specialist: 'Вовк Олена Іванівна — фахівчиня з ментального здоров\'я · +38 095 822 77 24 · перша розмова безкоштовно',
+    specialist:
+      "Вовк Олена Іванівна — фахівчиня з ментального здоров'я · +38 095 822 77 24 · перша розмова безкоштовно",
   },
   US: { anonymous: ['988 — Suicide & Crisis Lifeline · call · text'], specialist: '' },
   UK: { anonymous: ['116 123 — Samaritans · 24/7'], specialist: '' },
@@ -608,10 +609,23 @@ export function buildSystemPrompt(ctx: SessionContext): {
   return { system: blocks };
 }
 
+// Максимальна довжина імені — 32 символи. Новий рядок та керуючі символи
+// видаляються, щоб унеможливити prompt-injection через поле userName.
+const USER_NAME_MAX_LEN = 32;
+
+function sanitizeUserName(name: string): string {
+  // Видаляємо керуючі символи (0x00–0x1F, 0x7F) та символи нового рядка/переведення каретки
+  // eslint-disable-next-line no-control-regex -- санітизація саме керуючих символів
+  const stripped = name.replace(/[\x00-\x1F\x7F]/g, '').trim();
+  // Обрізаємо до максимальної довжини
+  return stripped.slice(0, USER_NAME_MAX_LEN);
+}
+
 function buildContextBlock(ctx: SessionContext): string {
-  const nameBlock = ctx.userName
-    ? `user_name:       ${ctx.userName}
-name_note:       Звертайся «${ctx.userName}» — природно, не нав'язливо. Не повторюй у кожній репліці. Не змінюй форму (зменшувальні суфікси, «пом'якшення» — заборонено).`
+  const safeName = ctx.userName !== null ? sanitizeUserName(ctx.userName) : null;
+  const nameBlock = safeName
+    ? `user_name:       ${safeName}
+name_note:       Звертайся «${safeName}» — природно, не нав'язливо. Не повторюй у кожній репліці. Не змінюй форму (зменшувальні суфікси, «пом'якшення» — заборонено).`
     : `user_name:       не вказано — звертайся безособово, не питай знову.`;
 
   return `[ПОТОЧНИЙ КОНТЕКСТ]
@@ -657,7 +671,9 @@ function buildTurnRules(ctx: SessionContext): string {
     rules.push("— Лишилась хвилина. Нагадай м'яко одним реченням і продовжуй слухати.");
   }
   if (sessionActive && ctx.elapsedMin >= 25) {
-    rules.push('— Час вийшов. Дай коротку закриваючу репліку. Без «мені шкода», без обіцянок повернутись. UI закриє чат.');
+    rules.push(
+      '— Час вийшов. Дай коротку закриваючу репліку. Без «мені шкода», без обіцянок повернутись. UI закриє чат.',
+    );
   }
   if (ctx.companionshipDriftDetected) {
     rules.push(
@@ -669,8 +685,12 @@ function buildTurnRules(ctx: SessionContext): string {
   }
 
   // Постійні правила — завжди в кожному ході
-  rules.push('— НЕ починай репліку з «чую тебе.» — це шаблон, не діалог. Відкривай природно: питанням, реакцією на конкретне слово юзера, або мовчазною присутністю (коротка репліка без форматних вставок).');
-  rules.push('— МОВА AI: вульгаризми та лайка заборонені. Дозволений сленг — лише зі словника (жиза, тильт, тріггерить, крінж, токсик, база, тру, вайб, ріл, імба, ред флег, краш). Максимум 1–2 сленгових слова на повідомлення. При важких темах і кризі — тільки чиста українська.');
+  rules.push(
+    '— НЕ починай репліку з «чую тебе.» — це шаблон, не діалог. Відкривай природно: питанням, реакцією на конкретне слово юзера, або мовчазною присутністю (коротка репліка без форматних вставок).',
+  );
+  rules.push(
+    '— МОВА AI: вульгаризми та лайка заборонені. Дозволений сленг — лише зі словника (жиза, тильт, тріггерить, крінж, токсик, база, тру, вайб, ріл, імба, ред флег, краш). Максимум 1–2 сленгових слова на повідомлення. При важких темах і кризі — тільки чиста українська.',
+  );
 
   return rules.join('\n');
 }
@@ -698,8 +718,10 @@ ${specialist}
 
 function buildElevatedCrisisBlock(ctx: SessionContext): string {
   const lines = HOTLINES[ctx.jurisdiction];
-  const anonymousLines = lines.anonymous.map((h) => `  · ${h}`).join('\n');
-  const specialistLine = lines.specialist ? `  · ${lines.specialist}` : '';
+  // Борг (quality-gate §6): шаблон нижче хардкодить UA-скрипт і НЕ інтерполює
+  // jurisdiction-специфічні лінії. Інтерполяція — рішення Methodology Lead.
+  const _anonymousLines = lines.anonymous.map((h) => `  · ${h}`).join('\n');
+  const _specialistLine = lines.specialist ? `  · ${lines.specialist}` : '';
 
   return `[CRISIS ДІАЛОГ · ELEVATED · АКТИВНО]
 
@@ -779,4 +801,3 @@ function buildPostCrisisBlock(): string {
 — НЕ тиснути на дзвінок — вже показали, юзер знає
 — НЕ згадувати таймер і ліміт сесії`;
 }
-
