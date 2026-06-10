@@ -28,6 +28,8 @@ supabase/.temp/
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 
 # OS
 .DS_Store

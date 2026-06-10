@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test --project=e2e",
+    "e2e:visual": "playwright test --project=visual",
+    "e2e:all": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
@@ -26,7 +29,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.1",
     "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "1.60.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

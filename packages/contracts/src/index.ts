@@ -119,6 +119,41 @@ const SseCrisisEventSchema = z.object({
   message: z.string(),
 });
 
+// ---------------------------------------------------------------------------
+// BookingSubmitSchema — клієнт → POST /api/booking/submit
+//
+// Три споживачі: route handler, клієнтська форма, тести — YAGNI виконано.
+// Email-валідація: якщо contact_preferred = 'email', contact_value має бути
+// валідним email (z.string().email()).
+// ---------------------------------------------------------------------------
+
+const ContactChannelSchema = z.enum(['telegram', 'email']);
+
+export const BookingSubmitSchema = z
+  .object({
+    specialist_slug: z.string().min(1).max(64),
+    session_type: z.string().min(1).max(32),
+    user_name: z.string().min(2).max(64),
+    contact_preferred: ContactChannelSchema,
+    contact_value: z.string().min(3).max(256),
+    user_age_band: z.enum(['13-15', '16-17', '18-25', '25+']),
+    topic: z.string().max(300).nullable().optional(),
+    ai_excerpt: z.string().max(1000).nullable().optional(),
+    consent_offer: z.literal(true),
+    consent_contact: z.literal(true),
+  })
+  .refine(
+    (data) =>
+      data.contact_preferred !== 'email' ||
+      z.string().email().safeParse(data.contact_value).success,
+    {
+      message: 'Введи коректний email',
+      path: ['contact_value'],
+    },
+  );
+
+export type BookingSubmit = z.infer<typeof BookingSubmitSchema>;
+
 export const SseEventSchema = z.discriminatedUnion('type', [
   SseTokenEventSchema,
   SseDoneEventSchema,

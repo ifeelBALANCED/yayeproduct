@@ -9,7 +9,8 @@
     "./system-prompt": "./system-prompt.ts",
     "./crisis-detector": "./crisis-detector.ts",
     "./principles/asymmetry": "./principles/asymmetry.ts",
-    "./exercises": "./exercises/index.ts"
+    "./exercises": "./exercises/index.ts",
+    "./principles/responseStyle": "./principles/responseStyle.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -12,6 +12,7 @@ import { SpecialistRedirectInline } from '@/components/chat/SpecialistRedirectIn
 import { cn } from '@ya-ye/ui';
 import { getExercise, type ExerciseId } from '@ya-ye/method/exercises';
 import { SseEventSchema, type ChatRequest } from '@ya-ye/contracts';
+import { parseModeLabel, stripModeLabel, DEFAULT_MODE_LABEL } from '@/lib/parseModeLabel';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -147,6 +148,8 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
   // flicker'а (greeting → DB-історія). Якщо Supabase плейсхолдер — endpoint
   // одразу повертає [] і ми переходимо у звичайний first-turn flow.
   const [hydrated, setHydrated] = useState(false);
+  // mode-лейбл — оновлюється з першого рядка кожної assistant-відповіді
+  const [modeLabel, setModeLabel] = useState(DEFAULT_MODE_LABEL);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const currentStreamId = useRef<string | null>(null);
@@ -217,6 +220,18 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     }
   }, [hydrated, messages.length]);
 
+  // Зберігаємо id таймера, щоб скасувати його при unmount (запобігає leak).
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup таймера при unmount компонента
+  useEffect(() => {
+    return () => {
+      if (exitTimerRef.current !== null) {
+        clearTimeout(exitTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleExpire = useCallback(() => {
     setExpired(true);
     setMessages((prev) => [
@@ -234,31 +249,42 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     // Канонічний промт 4.9: «UI зараз закриє чат». Даємо 8с прочитати
     // closing-баббли, потім ведемо на graduation-екран /exit. Route group
     // (chat) не додає prefix — URL є /${sessionId}/exit.
-    setTimeout(() => {
+    // Таймер зберігається у ref — cleanup у useEffect вище скасує його при unmount.
+    exitTimerRef.current = setTimeout(() => {
       router.push(`/${sessionId}/exit`);
     }, 8000);
   }, [router, sessionId]);
 
-  const appendToStream = useCallback((id: string, text: string) => {
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        // Join existing + new text, then check for [MODE:4] marker.
-        // Strip marker from display, but remember it for rendering the inline.
-        const rawWithMarker = m.bubbles.join('\n\n') + text;
-        const hasModeRedirect = MODE_REDIRECT_RE.test(rawWithMarker);
-        // Reset regex state (g-flag is stateful) before next test elsewhere
-        MODE_REDIRECT_RE.lastIndex = 0;
-        const raw = rawWithMarker.replace(MODE_REDIRECT_RE, '');
-        return {
-          ...m,
-          bubbles: raw.split('\n\n').filter(Boolean),
-          isStreaming: true,
-          hasModeRedirect: m.hasModeRedirect || hasModeRedirect,
-        };
-      }),
-    );
-  }, []);
+  const appendToStream = useCallback(
+    (id: string, text: string) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== id) return m;
+          // Join existing + new text, then check for [MODE:4] marker.
+          // Strip marker from display, but remember it for rendering the inline.
+          const rawWithMarker = m.bubbles.join('\n\n') + text;
+          const hasModeRedirect = MODE_REDIRECT_RE.test(rawWithMarker);
+          // Reset regex state (g-flag is stateful) before next test elsewhere
+          MODE_REDIRECT_RE.lastIndex = 0;
+          // Витягуємо mode-лейбл з першого рядка відповіді і оновлюємо стрічку.
+          // stripModeLabel прибирає тег з тексту перед розбивкою на баббли.
+          const label = parseModeLabel(rawWithMarker);
+          if (label !== DEFAULT_MODE_LABEL) {
+            setModeLabel(label);
+          }
+          const raw = stripModeLabel(rawWithMarker).replace(MODE_REDIRECT_RE, '');
+          MODE_REDIRECT_RE.lastIndex = 0;
+          return {
+            ...m,
+            bubbles: raw.split('\n\n').filter(Boolean),
+            isStreaming: true,
+            hasModeRedirect: m.hasModeRedirect || hasModeRedirect,
+          };
+        }),
+      );
+    },
+    [setModeLabel],
+  );
 
   const finalizeStream = useCallback((id: string) => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isStreaming: false } : m)));
@@ -415,10 +441,10 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
 
   return (
     <>
-      {/* Mode strip */}
+      {/* Mode strip — лейбл оновлюється з першого рядка кожної assistant-відповіді */}
       <div className="flex items-center justify-between border-b border-divider px-4 py-2">
         <span className="font-mono text-[10px] uppercase tracking-wider text-inkSoft">
-          [01 · підтримую]
+          {modeLabel}
         </span>
         <SessionTimer onExpire={handleExpire} />
       </div>
@@ -535,7 +561,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
         {/* SOS shortcut below input */}
         <div className="mt-2 flex justify-end">
           <Link
-            href="/crisis"
+            href={`/crisis?sessionId=${sessionId}` as `/crisis?sessionId=${string}`}
             className="font-mono text-[10px] uppercase tracking-wider text-crisis/70 hover:text-crisis"
           >
             SOS →

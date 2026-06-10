@@ -154,6 +154,129 @@ jobs:
           ANTHROPIC_PROMPT_VERSION: 'v1.8'
         run: pnpm --filter @ya-ye/teen test
 
+  # ─── S6 · Method/AI gates ───────────────────────────────────────────────
+  # docs/quality-gate.md §3 S6: crisis recall, prompt snapshots, mode contract,
+  # response-antipatterns, asymmetry fixation — окремий named check для
+  # required-конфігурації фази 3. Метод-тести також ганяються в s1-unit —
+  # S6 = ізольований named check для гейтингу methodology-only змін.
+  s6-method:
+    name: S6 · Method/AI gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run method tests (vitest)
+        working-directory: packages/method
+        run: pnpm vitest run --coverage
+
+  # ─── S3 · E2E-флоу (Playwright) ──────────────────────────────────────────
+  # docs/quality-gate.md §3 S3: E2E-флоу, a11y, проти next build (demo-режим).
+  # Anthropic мокається через page.route() у playwright-тестах.
+  # SUPABASE env: не потрібен у demo-режимі (демо-флоу без DB).
+  s3-e2e:
+    name: S3 · E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+        working-directory: apps/teen
+
+      # Build teen у demo-режимі (без Supabase env).
+      # ANTHROPIC_API_KEY не потрібен — Anthropic мокається у playwright через page.route().
+      - name: Build teen (demo mode)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: pnpm build
+
+      - name: Run E2E tests (project=e2e)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: npx playwright test --project=e2e
+
+  # ─── S4 · Visual regression (Playwright toHaveScreenshot) ────────────────
+  # docs/quality-gate.md §3 S4: viewport 375/768/1280, uk locale,
+  # prefers-reduced-motion, maxDiffPixelRatio 0.01.
+  # КОМЕНТАР: не required до стабілізації базлайнів
+  # (linux-базлайни — fix-forward першим прогоном).
+  s4-visual:
+    name: S4 · Visual regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+        working-directory: apps/teen
+
+      - name: Build teen (demo mode)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: pnpm build
+
+      - name: Run visual regression tests (project=visual)
+        working-directory: apps/teen
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          ANTHROPIC_PROMPT_VERSION: 'v1.8'
+        run: npx playwright test --project=visual
+
+      # Завантажуємо скріншоти і test-results при падінні для дебагу базлайнів.
+      - name: Upload visual test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-test-results
+          path: |
+            apps/teen/test-results/
+            apps/teen/playwright-report/
+          if-no-files-found: warn
+
   # ─── S5 · Security (SAST) ────────────────────────────────────────────────
   # docs/quality-gate.md §3 S5: semgrep OWASP top-10 + кастомні правила.
   # Кастомні правила (заборона SERVICE_ROLE_KEY поза server/adapters,
