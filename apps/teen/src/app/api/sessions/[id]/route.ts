@@ -1,16 +1,19 @@
-// GET /api/sessions/[id]/messages — тонкий Controller (CQRS-lite, quality-gate §2.1).
-// 401/403 семантика (S5) → getSessionMessages query → серіалізація.
+// DELETE /api/sessions/[id] — GDPR right-to-erasure (S5, quality-gate §S5).
+// 401/403 → rate limit → deleteSession command → 204.
+//
+// Каскад: БД видаляє messages + crisis_events разом з session-row.
+// User-row НЕ видаляємо — на ньому можуть висіти інші сесії.
+// Повне видалення user — окремий GDPR-endpoint, борг Phase 4.
 
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import { hasSessionCookie, verifySessionCookie } from '@/lib/session-token';
 import { clientIp } from '@/lib/rate-limit';
-import { MessagesResponseSchema } from '@ya-ye/contracts';
-import { getSessionMessages } from '@/server/queries/getSessionMessages';
+import { deleteSession } from '@/server/commands/deleteSession';
 import { MemoryLimiterAdapter } from '@/server/adapters/memoryLimiter';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;
 
   if (!sessionId || !UUID_RE.test(sessionId)) {
@@ -38,7 +41,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const limiter = new MemoryLimiterAdapter();
   const ip = clientIp(req);
 
-  const result = await getSessionMessages({ sessionId, ip }, { supabase, limiter });
+  const result = await deleteSession({ sessionId, ip }, { supabase, limiter });
 
   if (result.kind === 'error') {
     return new Response(JSON.stringify({ error: result.error }), {
@@ -47,12 +50,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     });
   }
 
-  const body = MessagesResponseSchema.parse({
-    messages: result.messages,
-    persisted: result.persisted,
-  });
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // 204 No Content — стандарт для успішного DELETE.
+  return new Response(null, { status: 204 });
 }

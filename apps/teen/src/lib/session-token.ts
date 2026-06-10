@@ -22,6 +22,15 @@ function sign(sessionId: string, secret: string): string {
   return createHmac('sha256', secret).update(sessionId).digest('hex');
 }
 
+// Зчитуємо raw-значення cookie без верифікації (для розділення читання/перевірки).
+function readRawCookie(req: Request): string | undefined {
+  return (req.headers.get('cookie') ?? '')
+    .split(';')
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${COOKIE_NAME}=`))
+    ?.slice(COOKIE_NAME.length + 1);
+}
+
 export function buildSessionCookie(sessionId: string): string | null {
   const secret = getSecret();
   if (!secret) return null;
@@ -30,14 +39,29 @@ export function buildSessionCookie(sessionId: string): string | null {
   return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE_SEC}${secure}`;
 }
 
+// hasSessionCookie — перевіряє лише наявність cookie (для 401 vs 403 семантики).
+// true = cookie є (але може бути для іншої сесії); false = cookie взагалі відсутній.
+export function hasSessionCookie(req: Request): boolean {
+  return readRawCookie(req) !== undefined;
+}
+
+// readSessionCookie — зчитує sessionId з cookie БЕЗ верифікації підпису.
+// Використовується для логування/діагностики. Для auth — тільки verifySessionCookie.
+export function readSessionCookie(req: Request): string | null {
+  const raw = readRawCookie(req);
+  if (!raw) return null;
+  const dot = raw.lastIndexOf('.');
+  if (dot <= 0) return null;
+  return raw.slice(0, dot);
+}
+
+// verifySessionCookie — повна перевірка: cookie є + підпис валідний + sessionId збігається.
+// Повертає false як для відсутнього cookie, так і для невірного підпису/sessionId.
+// Для розрізнення 401/403 — викликай hasSessionCookie окремо перед цією функцією.
 export function verifySessionCookie(req: Request, sessionId: string): boolean {
   const secret = getSecret();
   if (!secret) return false;
-  const raw = (req.headers.get('cookie') ?? '')
-    .split(';')
-    .map((c) => c.trim())
-    .find((c) => c.startsWith(`${COOKIE_NAME}=`))
-    ?.slice(COOKIE_NAME.length + 1);
+  const raw = readRawCookie(req);
   if (!raw) return false;
   const dot = raw.lastIndexOf('.');
   if (dot <= 0) return false;

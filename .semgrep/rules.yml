@@ -1,0 +1,106 @@
+# .semgrep/rules.yml — кастомні SAST-правила для «Я Є» (S5, quality-gate §S5).
+# Запуск: semgrep --config .semgrep/rules.yml .
+# Синтаксис: semgrep OSS (open-source engine), pattern/patterns/pattern-either.
+
+rules:
+  # -------------------------------------------------------------------------
+  # (a) SUPABASE_SERVICE_ROLE_KEY дозволений лише у server-адаптерах і supabase/server.ts.
+  # Будь-де інде — ERROR (витік service-key у клієнтський код = RLS bypass).
+  # -------------------------------------------------------------------------
+  - id: service-role-key-outside-server
+    message: >
+      SUPABASE_SERVICE_ROLE_KEY використовується поза дозволеними файлами.
+      Дозволено лише в apps/*/src/lib/supabase/server.ts та apps/*/src/server/adapters/*.
+      Витік service-key у будь-який інший модуль обходить RLS повністю.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern: process.env.SUPABASE_SERVICE_ROLE_KEY
+    paths:
+      exclude:
+        - '**/src/lib/supabase/server.ts'
+        - '**/src/server/adapters/**'
+        - '**/__tests__/**'
+        - '**/*.test.ts'
+        - '**/*.test.js'
+        - '**/*.spec.ts'
+        - '**/*.spec.js'
+
+  # -------------------------------------------------------------------------
+  # (b) console.log/warn/error з PII-ідентифікаторами у рядкових аргументах.
+  # Виявляє: console.log('email: ' + x), console.log(`telegram: ${x}`), тощо.
+  # Правила охоплюють template literals і рядкову конкатенацію.
+  # -------------------------------------------------------------------------
+  - id: console-pii-string-literal
+    message: >
+      console.log/warn/error містить PII-ідентифікатор (contact/phone/email/telegram/instagram)
+      у рядковому аргументі. Видаліть або замініть на sanitized placeholder.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: console.log("...$PII...", ...)
+      - pattern: console.warn("...$PII...", ...)
+      - pattern: console.error("...$PII...", ...)
+      - pattern: console.log(`...$PII...`, ...)
+      - pattern: console.warn(`...$PII...`, ...)
+      - pattern: console.error(`...$PII...`, ...)
+    metavariable-regex:
+      metavariable: $PII
+      regex: '(?i)(contact|phone|email|telegram|instagram)'
+    paths:
+      exclude:
+        - '**/__tests__/**'
+        - '**/*.test.ts'
+        - '**/*.test.js'
+        - '**/*.spec.ts'
+        - '**/*.spec.js'
+
+  # -------------------------------------------------------------------------
+  # (b-2) console з об'єктом що містить PII-поля (деструктуризація / об'єкт-літерал).
+  # Виявляє: console.log({ email }), console.log({ telegram: x }), тощо.
+  # -------------------------------------------------------------------------
+  - id: console-pii-object-field
+    message: >
+      console.log/warn/error логує об'єкт з потенційним PII-полем.
+      Перевірте що contactValue/email/phone/telegram/instagram не потрапляють у лог.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: 'console.log({..., $PII: ..., ...})'
+      - pattern: 'console.warn({..., $PII: ..., ...})'
+      - pattern: 'console.error({..., $PII: ..., ...})'
+      - pattern: 'console.log({..., $PII, ...})'
+      - pattern: 'console.warn({..., $PII, ...})'
+      - pattern: 'console.error({..., $PII, ...})'
+    metavariable-regex:
+      metavariable: $PII
+      regex: '(?i)(contactValue|contactPreferred|phone|email|telegram|instagram|userName|user_name)'
+    paths:
+      exclude:
+        - '**/__tests__/**'
+        - '**/*.test.ts'
+        - '**/*.test.js'
+        - '**/*.spec.ts'
+        - '**/*.spec.js'
+
+  # -------------------------------------------------------------------------
+  # (c) process.env.ANTHROPIC_API_KEY поза server/adapters та route.ts — WARNING.
+  # API-ключ не має з'являтися у компонентах, utils, lib (крім адаптера).
+  # -------------------------------------------------------------------------
+  - id: anthropic-key-outside-adapter
+    message: >
+      process.env.ANTHROPIC_API_KEY використовується поза apps/teen/src/server/adapters/
+      та route.ts. Ключ має читатись лише в AnthropicSdkAdapter або точці входу route.
+      Переконайтесь, що він не потрапляє у клієнтський бандл.
+    severity: WARNING
+    languages: [typescript, javascript]
+    pattern: process.env.ANTHROPIC_API_KEY
+    paths:
+      exclude:
+        - '**/src/server/adapters/**'
+        - '**/src/app/api/**/route.ts'
+        - '**/src/app/api/**/route.js'
+        - '**/__tests__/**'
+        - '**/*.test.ts'
+        - '**/*.test.js'
+        - '**/*.spec.ts'
+        - '**/*.spec.js'
