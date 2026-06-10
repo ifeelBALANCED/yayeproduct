@@ -205,18 +205,16 @@ Anthropic мокається через `page.route()` (детермінован
 
 ## 6 · Реєстр відомого боргу (не блокує merge, блокує релокацію в «done»)
 
-| Борг                                                            | Де                                                   |
-| --------------------------------------------------------------- | ---------------------------------------------------- |
-| FM4: немає сценаріїв і keyword-детекції                         | `packages/method/scenarios.ts`, `mode-detector.ts`   |
-| `users.user_name` ігнорується сервером                          | `api/sessions/route.ts:17`                           |
-| `parental_consent` — stub 501, флоу не гейтиться                | `api/consent/route.ts`                               |
-| `api/crisis`, `api/handoff` — 501                               | stubs                                                |
-| `types.ts` ручний, `25+` vs `AgeBand` розсинхрон                | `packages/db/src/types.ts`                           |
-| Міграція `…000004` відсутня в послідовності                     | `supabase/migrations/`                               |
-| Supabase Realtime у стеку CLAUDE.md, у коді не використовується | стек-дрейф                                           |
-| Особисті контакти реальної людини в коді й seed                 | `system-prompt.ts:227`, `migrations/…000005:137-140` |
-| en.json є, локаль захардкожена `uk`                             | `apps/teen/src/i18n/request.ts:5`                    |
-| `outputFileTracingIncludes` тягне `docs/**` у serverless-бандл  | `apps/teen/next.config.mjs:13-15`                    |
+| Борг                                                                                                            | Де                                                            |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| FM4: немає сценаріїв і keyword-детекції                                                                         | `packages/method/scenarios.ts`, `mode-detector.ts`            |
+| Контракт sessions приймає `user_name`, але в `users` немає колонки — потрібні міграція + consent-рішення (GDPR) | `packages/contracts/src/index.ts:51`, `api/sessions/route.ts` |
+| `parental_consent` — stub 501, флоу не гейтиться                                                                | `api/consent/route.ts`                                        |
+| `api/crisis`, `api/handoff` — 501                                                                               | stubs                                                         |
+| Міграція `…000004` відсутня в послідовності                                                                     | `supabase/migrations/`                                        |
+| Supabase Realtime у стеку CLAUDE.md, у коді не використовується                                                 | стек-дрейф                                                    |
+| Особисті контакти реальної людини в коді (seed.sql переписано на placeholder у фазі 4)                          | `system-prompt.ts:228`, `migrations/…000005:130-141`          |
+| en.json є, локаль захардкожена `uk`                                                                             | `apps/teen/src/i18n/request.ts:5`                             |
 
 ---
 
