@@ -2,8 +2,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '@ya-ye/method/system-prompt';
 import { detectCrisis } from '@ya-ye/method/crisis-detector';
 import { validateAsymmetry } from '@ya-ye/method/principles/asymmetry';
-import { createClient } from '@/lib/supabase/server';
-import type { SessionContext } from '@ya-ye/method/system-prompt';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
+import { verifySessionCookie } from '@/lib/session-token';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
+import type { SessionContext, AgeBand, Jurisdiction } from '@ya-ye/method/system-prompt';
 
 // Crisis short-circuit message — точно за canonical golden 4.5 + section 4.5
 // "Дія: three-move logic, ОДРАЗУ: 1) почула. 2) зачекай, я хочу зробити паузу."
@@ -11,6 +13,31 @@ import type { SessionContext } from '@ya-ye/method/system-prompt';
 const CRISIS_MESSAGE = 'стоп. зупинись на секунду.\n\nя хочу щоб ти зараз був не сам з цим.';
 
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Ліміт довжини user-повідомлення: захист від token-stuffing у Anthropic API
+// (P0-5). UI-textarea і так не передбачає довших повідомлень.
+const MAX_MESSAGE_CHARS = 2000;
+const VALID_AGE_BANDS: readonly AgeBand[] = ['13-15', '16-17', '18-25'] as const;
+// DB-колонка jurisdiction — вільний text; HOTLINES індексується цим union,
+// тому невалідне значення з БД мусить деградувати до 'UA', а не падати.
+const VALID_JURISDICTIONS: readonly Jurisdiction[] = ['UA', 'US', 'UK', 'EU'] as const;
+
+// Результат server-side lookup сесії: БД — джерело істини для age_band,
+// jurisdiction і started_at (P0-3); клієнтські значення — лише demo-fallback.
+type SessionFacts = {
+  userId: string | null;
+  ageBand: AgeBand | null;
+  jurisdiction: Jurisdiction | null;
+  startedAtMs: number | null;
+};
+
+function jsonError(error: string, status: number): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 export async function POST(req: Request) {
   try {
@@ -34,6 +61,7 @@ async function _handlePost(req: Request) {
   let clientSessionStartedAt: number | null;
   let clientUserName: string | null;
   let clientPostCrisisMode: boolean;
+  let clientAgeBand: AgeBand | null;
   try {
     const body = (await req.json()) as {
       sessionId?: string;
@@ -43,6 +71,7 @@ async function _handlePost(req: Request) {
       sessionStartedAt?: unknown;
       userName?: unknown;
       postCrisisMode?: unknown;
+      ageBand?: unknown;
     };
     sessionId = body.sessionId ?? '';
     userMessage = body.userMessage ?? '';
@@ -55,7 +84,8 @@ async function _handlePost(req: Request) {
               !!m &&
               (m.role === 'user' || m.role === 'assistant') &&
               typeof m.content === 'string' &&
-              m.content.trim().length > 0,
+              m.content.trim().length > 0 &&
+              m.content.length <= MAX_MESSAGE_CHARS,
           )
           .slice(-20)
       : [];
@@ -74,12 +104,32 @@ async function _handlePost(req: Request) {
         ? body.userName.trim().slice(0, 32)
         : null;
     clientPostCrisisMode = body.postCrisisMode === true;
+    clientAgeBand =
+      typeof body.ageBand === 'string' &&
+      (VALID_AGE_BANDS as readonly string[]).includes(body.ageBand)
+        ? (body.ageBand as AgeBand)
+        : null;
   } catch {
     return new Response(JSON.stringify({ error: 'invalid request' }), { status: 400 });
   }
 
-  if (!sessionId || !userMessage.trim()) {
+  if (!sessionId || !UUID_RE.test(sessionId) || !userMessage.trim()) {
     return new Response(JSON.stringify({ error: 'invalid request' }), { status: 400 });
+  }
+  if (userMessage.length > MAX_MESSAGE_CHARS) {
+    return jsonError('message too long', 400);
+  }
+
+  // P0-5: підтвердження володіння сесією — HMAC-cookie, виданий /api/sessions.
+  // Без нього будь-хто зі знанням UUID писав би в чужу сесію (IDOR).
+  if (!verifySessionCookie(req, sessionId)) {
+    return jsonError('forbidden', 403);
+  }
+
+  // P0-5: rate limit — кожен виклик коштує грошей (Anthropic API).
+  const ip = clientIp(req);
+  if (!rateLimit(`chat:ip:${ip}`, 20, 60_000) || !rateLimit(`chat:session:${sessionId}`, 15, 60_000)) {
+    return jsonError('too many requests', 429);
   }
 
   // Lazy-init Anthropic client — read env at request time, not module load.
@@ -95,7 +145,48 @@ async function _handlePost(req: Request) {
   }
   const anthropic = new Anthropic({ apiKey });
 
-  const supabase = createClient();
+  const supabase = isSupabaseConfigured() ? createClient() : null;
+
+  // Server-side факти сесії (P0-3): age_band/jurisdiction/started_at читаються
+  // з БД, а не з клієнта. Demo-режим (без Supabase) — fallback на валідовані
+  // клієнтські значення нижче.
+  const facts: SessionFacts = { userId: null, ageBand: null, jurisdiction: null, startedAtMs: null };
+  if (supabase) {
+    type SessionRow = {
+      user_id: string | null;
+      started_at: string | null;
+      users:
+        | { age_band: string | null; jurisdiction: string | null }
+        | Array<{ age_band: string | null; jurisdiction: string | null }>
+        | null;
+    };
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('user_id, started_at, users ( age_band, jurisdiction )')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (error) {
+      // Транзієнтний збій БД не повинен валити чат — деградуємо до demo-поведінки
+      console.warn('[chat] session lookup failed:', error.message);
+    } else if (!data) {
+      // Сесія не існує — не пишемо повідомлення/кризові евенти в неіснуючі FK
+      return jsonError('unknown session', 404);
+    } else {
+      const row = data as SessionRow;
+      const user = Array.isArray(row.users) ? (row.users[0] ?? null) : row.users;
+      facts.userId = row.user_id;
+      facts.ageBand =
+        user && (VALID_AGE_BANDS as readonly string[]).includes(user.age_band ?? '')
+          ? (user.age_band as AgeBand)
+          : null;
+      facts.jurisdiction =
+        user && (VALID_JURISDICTIONS as readonly string[]).includes(user.jurisdiction ?? '')
+          ? (user.jurisdiction as Jurisdiction)
+          : null;
+      const parsed = row.started_at ? Date.parse(row.started_at) : NaN;
+      facts.startedAtMs = Number.isNaN(parsed) ? null : parsed;
+    }
+  }
 
   // 1. Crisis detection — current message first, then scan recent history to preserve context.
   // "справді" alone doesn't trip the detector, but when it follows a crisis confirmation question
@@ -121,23 +212,38 @@ async function _handlePost(req: Request) {
       ? crisis.severity
       : (stickyLevel[historyCrisisLevel] ?? 'none') as typeof crisis.severity;
 
-  // 2. Log crisis event if elevated or higher (non-blocking — DB may not be configured in dev)
-  if (effectiveCrisisLevel !== 'none') {
-    await supabase.from('crisis_events').insert({
-      session_id: sessionId,
-      severity: effectiveCrisisLevel,
-      trigger_text: userMessage.slice(0, 500),
-      detected_at: new Date().toISOString(),
-    }).then(({ error }) => { if (error) console.warn('[crisis-log]', error.message); });
+  // 2. Save user message FIRST — його id потрібен для crisis_events.trigger_message_id
+  let userMessageId: string | null = null;
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        session_id: sessionId,
+        role: 'user',
+        content: userMessage,
+        prompt_version: process.env.ANTHROPIC_PROMPT_VERSION ?? 'v1.8',
+      })
+      .select('id')
+      .single();
+    if (error) console.warn('[msg-save-user]', error.message);
+    else userMessageId = (data as { id: string } | null)?.id ?? null;
   }
 
-  // 3. Save user message (non-blocking)
-  await supabase.from('messages').insert({
-    session_id: sessionId,
-    role: 'user',
-    content: userMessage,
-    prompt_version: process.env.ANTHROPIC_PROMPT_VERSION ?? 'v1.8',
-  }).then(({ error }) => { if (error) console.warn('[msg-save-user]', error.message); });
+  // 3. Log crisis event — колонки точно за схемою migration 001 (P0-1):
+  // trigger_text/detected_at у таблиці НЕ існують, jurisdiction — NOT NULL.
+  // Текст тригера доступний через trigger_message_id → messages.content.
+  if (effectiveCrisisLevel !== 'none' && supabase) {
+    const { error } = await supabase.from('crisis_events').insert({
+      session_id: sessionId,
+      user_id: facts.userId,
+      trigger_message_id: userMessageId,
+      severity: effectiveCrisisLevel,
+      detection_method: 'keyword_v1',
+      jurisdiction: facts.jurisdiction ?? 'UA',
+    });
+    // Safety-критичний запис: помилка не ковтається тихо (quality-gate S2-інваріант)
+    if (error) console.error('[crisis-log] insert FAILED:', error.message, { sessionId });
+  }
 
   // 4. High/imminent crisis → return JSON signal, skip streaming
   if (crisis.severity === 'high' || crisis.severity === 'imminent') {
@@ -167,16 +273,20 @@ async function _handlePost(req: Request) {
 
   // 6. Build session context
   const now = Date.now();
-  // null означає: перше повідомлення або таймер ще не почато — elapsed = 0
-  const sessionStartedAt = clientSessionStartedAt ?? null;
+  // P0-3: started_at з БД виграє; клієнтський timestamp — лише demo-fallback.
+  // Clamp 0..60 хв: клієнт не може форсувати session-end правила (4.8/4.9)
+  // абсурдним значенням. null = перше повідомлення, elapsed = 0.
+  const sessionStartedAt = facts.startedAtMs ?? clientSessionStartedAt ?? null;
   const elapsedMin = sessionStartedAt
-    ? Math.max(0, Math.floor((now - sessionStartedAt) / 60000))
+    ? Math.min(60, Math.max(0, Math.floor((now - sessionStartedAt) / 60000)))
     : 0;
 
   const ctx: SessionContext = {
-    ageBand: '16-17',
+    // P0-3: age_band з users-таблиці (онбординг); demo-fallback — валідований
+    // клієнтський enum; останній резерв — '16-17' (середня група).
+    ageBand: facts.ageBand ?? clientAgeBand ?? '16-17',
     locale: 'uk',
-    jurisdiction: 'UA',
+    jurisdiction: facts.jurisdiction ?? 'UA',
     sessionStartTime: new Date(sessionStartedAt ?? now),
     elapsedMin,
     turnNumber: userTurnCount,
@@ -232,13 +342,16 @@ async function _handlePost(req: Request) {
           console.warn('[asymmetry-violation]', asymmetryResult.matches, { sessionId });
         }
 
-        // 9. Save assistant message (non-blocking)
-        await supabase.from('messages').insert({
-          session_id: sessionId,
-          role: 'assistant',
-          content: fullResponse,
-          prompt_version: process.env.ANTHROPIC_PROMPT_VERSION ?? 'v1.8',
-        }).then(({ error }) => { if (error) console.warn('[msg-save-assistant]', error.message); });
+        // 9. Save assistant message
+        if (supabase) {
+          const { error } = await supabase.from('messages').insert({
+            session_id: sessionId,
+            role: 'assistant',
+            content: fullResponse,
+            prompt_version: process.env.ANTHROPIC_PROMPT_VERSION ?? 'v1.8',
+          });
+          if (error) console.warn('[msg-save-assistant]', error.message);
+        }
 
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`));
         controller.close();

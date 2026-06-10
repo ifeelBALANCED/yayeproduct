@@ -9,18 +9,38 @@
 // порожній масив. UI коректно покаже greeting і чекатиме першого ходу.
 
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
+import { verifySessionCookie } from '@/lib/session-token';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 type Turn = { role: 'user' | 'assistant'; content: string; created_at: string };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: sessionId } = await params;
 
-  if (!sessionId) {
+  if (!sessionId || !UUID_RE.test(sessionId)) {
     return new Response(JSON.stringify({ error: 'missing session id' }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // P0-5: історія розмови — special-category data (GDPR Art. 9). Доступ лише
+  // власнику HMAC-cookie цієї сесії; знання UUID більше не достатнє (IDOR).
+  if (!verifySessionCookie(req, sessionId)) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!rateLimit(`messages:${clientIp(req)}`, 60, 60_000)) {
+    return new Response(JSON.stringify({ error: 'too many requests' }), {
+      status: 429,
       headers: { 'Content-Type': 'application/json' },
     });
   }

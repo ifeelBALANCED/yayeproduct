@@ -122,5 +122,13 @@ divider: '#D9D0BD'
 
 ---
 
+## 7 · Quality Gate
+
+- **Канон:** `/docs/quality-gate.md` — діє для **кожного MR**. Завжди посилайся на нього в PR, рев'ю та при будь-яких змінах CI/тестів.
+- Стадії S0–S7 (static → unit → DB-integration → E2E → visual → security → method/AI → budget) — required checks для merge у `master`.
+- Якщо CI або код суперечать `/docs/quality-gate.md` — документ виграє.
+
+---
+
 *Methodology framework: Olena Vovk, Methodology Lead.*
 *Якщо код суперечить методологічній рамці — рамка виграє.*
