@@ -13,10 +13,10 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? '';
 const ANON_KEY =
   process.env.SUPABASE_TEST_ANON_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7URIqUfev2Y864T4SuTHrevNyYJqFnug8tA';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 const SERVICE_KEY =
   process.env.SUPABASE_TEST_SERVICE_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
 // Seed therapist ids з supabase/seed.sql
 const THERAPIST_1_ID = '11111111-0000-0000-0000-000000000001';
@@ -216,13 +216,22 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
     if (teenUserId) await svc.from('users').delete().eq('id', teenUserId);
   });
 
-  // ── Допоміжна функція ──────────────────────────────────────────────────────
-  // Повертає true якщо операція дозволена (немає помилки і є дані або порожній масив)
+  // ── Допоміжні функції ──────────────────────────────────────────────────────
+  // allowed: операція пройшла без помилки.
   function allowed(error: { message?: string } | null): boolean {
     return error === null;
   }
-  function denied(error: { message?: string } | null): boolean {
-    return error !== null;
+  // denied: PostgREST під RLS НЕ кидає помилку для SELECT/UPDATE/DELETE —
+  // недоступні рядки мовчки відфільтровуються (повертається 0 рядків).
+  // Явна помилка приходить лише для INSERT (та UPDATE з WITH CHECK-порушенням).
+  // Тому «заборонено» = помилка АБО нуль доступних рядків. Для UPDATE/DELETE
+  // тести чейнять .select('id'), щоб PostgREST повернув зачеплені рядки.
+  // beforeAll гарантує seed-рядок у кожній таблиці — порожній результат
+  // доводить RLS-фільтрацію, а не порожню таблицю.
+  function denied(error: { message?: string } | null, data?: unknown): boolean {
+    if (error !== null) return true;
+    if (data === undefined) return false;
+    return Array.isArray(data) ? data.length === 0 : data === null;
   }
 
   // ============================================================================
@@ -231,8 +240,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   describe('users', () => {
     // anon: нічого
     it('anon SELECT users → denied (RLS: тільки власник)', async () => {
-      const { error } = await anon.from('users').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('users').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT users → denied', async () => {
@@ -292,8 +301,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // ============================================================================
   describe('sessions', () => {
     it('anon SELECT sessions → denied', async () => {
-      const { error } = await anon.from('sessions').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('sessions').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT sessions → denied', async () => {
@@ -302,8 +311,12 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
     });
 
     it('anon DELETE sessions → denied', async () => {
-      const { error } = await anon.from('sessions').delete().eq('id', teenSessionId);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon
+        .from('sessions')
+        .delete()
+        .eq('id', teenSessionId)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     // service_role
@@ -333,8 +346,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // ============================================================================
   describe('messages', () => {
     it('anon SELECT messages → denied', async () => {
-      const { error } = await anon.from('messages').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('messages').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT messages → denied', async () => {
@@ -377,8 +390,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // ============================================================================
   describe('crisis_events', () => {
     it('anon SELECT crisis_events → denied', async () => {
-      const { error } = await anon.from('crisis_events').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('crisis_events').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT crisis_events → denied', async () => {
@@ -473,16 +486,21 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
     });
 
     it('anon UPDATE therapists → denied', async () => {
-      const { error } = await anon
+      const { data, error } = await anon
         .from('therapists')
         .update({ full_name: 'Hacked' })
-        .eq('id', THERAPIST_1_ID);
-      expect(denied(error)).toBe(true);
+        .eq('id', THERAPIST_1_ID)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon DELETE therapists → denied', async () => {
-      const { error } = await anon.from('therapists').delete().eq('id', THERAPIST_1_ID);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon
+        .from('therapists')
+        .delete()
+        .eq('id', THERAPIST_1_ID)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     // authenticated терапевт бачить свій рядок (auth.uid() = id)
@@ -496,12 +514,13 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
     });
 
     it('authenticated therapist1 UPDATE own row → denied (тільки service_role)', async () => {
-      const { error } = await authedTherapist1
+      const { data, error } = await authedTherapist1
         .from('therapists')
         .update({ city: 'Харків' })
-        .eq('id', THERAPIST_1_ID);
-      // Без service_role UPDATE-policy для authenticated → denied
-      expect(denied(error)).toBe(true);
+        .eq('id', THERAPIST_1_ID)
+        .select('id');
+      // Без UPDATE-policy для authenticated → 0 зачеплених рядків
+      expect(denied(error, data)).toBe(true);
     });
 
     // service_role: bypass, INSERT/UPDATE/DELETE → allowed
@@ -562,8 +581,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // ============================================================================
   describe('referrals', () => {
     it('anon SELECT referrals → denied', async () => {
-      const { error } = await anon.from('referrals').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('referrals').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT referrals → denied', async () => {
@@ -618,8 +637,8 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // ============================================================================
   describe('consent_log', () => {
     it('anon SELECT consent_log → denied', async () => {
-      const { error } = await anon.from('consent_log').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('consent_log').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon INSERT consent_log → denied', async () => {
@@ -700,16 +719,21 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
     });
 
     it('anon UPDATE specialists → denied', async () => {
-      const { error } = await anon
+      const { data, error } = await anon
         .from('specialists')
         .update({ title: 'Hacked' })
-        .eq('slug', 'olena-vovk');
-      expect(denied(error)).toBe(true);
+        .eq('slug', 'olena-vovk')
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon DELETE specialists → denied', async () => {
-      const { error } = await anon.from('specialists').delete().eq('slug', 'olena-vovk');
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon
+        .from('specialists')
+        .delete()
+        .eq('slug', 'olena-vovk')
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     // service_role: повний доступ (bypass + explicit policy)
@@ -738,48 +762,53 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // BOOKING_REQUESTS — 000005 + 000007 (UPDATE/DELETE service_role)
   // ============================================================================
   describe('booking_requests', () => {
-    // anon може INSERT (policy "booking_requests: anyone can insert")
+    // anon може INSERT (policy "booking_requests: anyone can insert").
+    // Без .select(): RETURNING вимагає SELECT-policy, якої anon не має —
+    // PostgREST повертає RLS-помилку навіть для дозволеного INSERT.
     it('anon INSERT booking_requests → allowed', async () => {
-      const { data, error } = await anon
-        .from('booking_requests')
-        .insert({
-          session_type: 'discovery',
-          user_name: 'AnonTest',
-          contact_preferred: 'telegram',
-          contact_value: '@anontest',
-          user_age_band: '18-25',
-          consent_offer: true,
-          consent_contact: true,
-        })
-        .select('id')
-        .single();
+      const marker = '@anontest-rls-insert';
+      const { error } = await anon.from('booking_requests').insert({
+        session_type: 'discovery',
+        user_name: 'AnonTest',
+        contact_preferred: 'telegram',
+        contact_value: marker,
+        user_age_band: '18-25',
+        consent_offer: true,
+        consent_contact: true,
+      });
       expect(allowed(error)).toBe(true);
-      // cleanup через svc
-      if (data)
-        await svc
-          .from('booking_requests')
-          .delete()
-          .eq('id', (data as { id: string }).id);
+      // Верифікація вставки + cleanup — через service_role
+      const { data: inserted } = await svc
+        .from('booking_requests')
+        .select('id')
+        .eq('contact_value', marker);
+      expect(Array.isArray(inserted) ? inserted.length : 0).toBeGreaterThan(0);
+      await svc.from('booking_requests').delete().eq('contact_value', marker);
     });
 
     // anon НЕ може читати
     it('anon SELECT booking_requests → denied', async () => {
-      const { error } = await anon.from('booking_requests').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('booking_requests').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     // anon не може UPDATE або DELETE
     it('anon UPDATE booking_requests → denied', async () => {
-      const { error } = await anon
+      const { data, error } = await anon
         .from('booking_requests')
         .update({ status: 'contacted' })
-        .eq('id', bookingRequestId);
-      expect(denied(error)).toBe(true);
+        .eq('id', bookingRequestId)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon DELETE booking_requests → denied', async () => {
-      const { error } = await anon.from('booking_requests').delete().eq('id', bookingRequestId);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon
+        .from('booking_requests')
+        .delete()
+        .eq('id', bookingRequestId)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     // service_role: SELECT (explicit), UPDATE (000007), DELETE (000007)
@@ -823,38 +852,38 @@ describe.runIf(Boolean(SUPABASE_URL))('S2 · RLS-матриця (docs/quality-ga
   // EXERCISE_FEEDBACK — 000006 + 000007 (service_role SELECT)
   // ============================================================================
   describe('exercise_feedback', () => {
-    // anon може INSERT (policy "anon can insert exercise_feedback")
+    // anon може INSERT (policy "anon can insert exercise_feedback").
+    // Без .select(): RETURNING вимагає SELECT-policy, якої anon не має.
+    // 201 без помилки = рядок вставлено. Cleanup по result='neutral' —
+    // seed (beforeAll) та інші тести створюють лише 'helped'.
     it('anon INSERT exercise_feedback → allowed', async () => {
-      const { data, error } = await anon
-        .from('exercise_feedback')
-        .insert({ result: 'neutral' })
-        .select('id')
-        .single();
+      const { error } = await anon.from('exercise_feedback').insert({ result: 'neutral' });
       expect(allowed(error)).toBe(true);
-      if (data)
-        await svc
-          .from('exercise_feedback')
-          .delete()
-          .eq('id', (data as { id: string }).id);
+      await svc.from('exercise_feedback').delete().eq('result', 'neutral');
     });
 
     // anon не може читати
     it('anon SELECT exercise_feedback → denied', async () => {
-      const { error } = await anon.from('exercise_feedback').select('id').limit(1);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon.from('exercise_feedback').select('id').limit(1);
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon UPDATE exercise_feedback → denied', async () => {
-      const { error } = await anon
+      const { data, error } = await anon
         .from('exercise_feedback')
         .update({ result: 'helped' })
-        .eq('id', exerciseFeedbackId);
-      expect(denied(error)).toBe(true);
+        .eq('id', exerciseFeedbackId)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     it('anon DELETE exercise_feedback → denied', async () => {
-      const { error } = await anon.from('exercise_feedback').delete().eq('id', exerciseFeedbackId);
-      expect(denied(error)).toBe(true);
+      const { data, error } = await anon
+        .from('exercise_feedback')
+        .delete()
+        .eq('id', exerciseFeedbackId)
+        .select('id');
+      expect(denied(error, data)).toBe(true);
     });
 
     // service_role SELECT (000007: явна policy для аналітики)

@@ -19,6 +19,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // ws-поліфіл WebSocket для Node 20 (realtime-js кидає без нього)
+    setupFiles: ['./vitest.setup.ts'],
     // S1 unit-тести + S2 integration-тести (integration скипаються без env)
     include: ['src/**/*.test.ts', '__tests__/**/*.test.ts'],
     coverage: {
