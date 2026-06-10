@@ -27,10 +27,6 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@ya-ye/ui', '@ya-ye/method', '@ya-ye/db'],
   typedRoutes: true,
-  // Включити docs/ у serverless bundle — потрібно для readFileSync у system-prompt
-  outputFileTracingIncludes: {
-    '/api/chat': ['../../docs/**/*'],
-  },
   async headers() {
     return [
       {

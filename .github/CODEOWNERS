@@ -1,0 +1,18 @@
+# CODEOWNERS — обов'язкові рев'юери за зонами (docs/quality-gate.md §4).
+# Останній збіг виграє. Усі хендли тимчасово @ifeelBALANCED (єдиний
+# колаборатор) — замінити на реальні акаунти Methodology Lead і
+# backend-овнера, щойно вони з'являться у репозиторії.
+
+# Методологічний контур → Methodology Lead (Олена Вовк)
+/packages/method/                    @ifeelBALANCED
+/docs/system-prompt-canonical.md     @ifeelBALANCED
+/docs/method-framework.md            @ifeelBALANCED
+/docs/crisis-test-corpus*.jsonl      @ifeelBALANCED
+
+# База даних → backend-овнер
+/supabase/migrations/                @ifeelBALANCED
+/packages/db/                        @ifeelBALANCED
+
+# Quality gate і CI → tech lead
+/docs/quality-gate.md                @ifeelBALANCED
+/.github/workflows/                  @ifeelBALANCED
