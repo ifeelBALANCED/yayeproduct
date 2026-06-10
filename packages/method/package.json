@@ -1,0 +1,26 @@
+{
+  "name": "@ya-ye/method",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./system-prompt": "./system-prompt.ts",
+    "./crisis-detector": "./crisis-detector.ts",
+    "./principles/asymmetry": "./principles/asymmetry.ts",
+    "./exercises": "./exercises/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

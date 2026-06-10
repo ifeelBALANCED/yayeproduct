@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Я є",
+    "ai_disclosure": "Я є AI · не людина",
+    "sos": "SOS"
+  },
+  "onboarding": {
+    "tagline": "простір, поки знайдеш живу людину",
+    "age_prompt": "скільки тобі років?"
+  },
+  "theme": {
+    "prompt": "про що сьогодні?",
+    "options": {
+      "identity": "хто я",
+      "meaning": "сенс",
+      "freedom": "свобода",
+      "relationships": "стосунки",
+      "future": "майбутнє",
+      "anxiety": "тривога",
+      "nothing": "просто так"
+    }
+  },
+  "chat": {
+    "input_placeholder": "напиши...",
+    "session_timer": "{{minutes}}:{{seconds}}",
+    "session_warning": "залишилася хвилина"
+  },
+  "crisis": {
+    "headline": "підтримка зараз",
+    "ua_line": "Дитяча лінія довіри",
+    "ua_number": "116 111",
+    "ua_note": "безкоштовно · цілодобово",
+    "teenergizer": "Teenergizer",
+    "teenergizer_number": "7333",
+    "teenergizer_note": "чат · для підлітків"
+  },
+  "exit": {
+    "headline": "сесія завершена",
+    "message": "25 хвилин пройшло. зроби собі паузу.",
+    "next_cta": "знайти фахівця"
+  },
+  "info": {
+    "headline": "як я працюю",
+    "ai_statement": "я не людина. я алгоритм, який може відображати твої слова.",
+    "purpose": "я існую, щоб тримати простір, поки ти знайдеш живу людину."
+  }
+}

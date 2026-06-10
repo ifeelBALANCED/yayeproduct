@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "I Am",
+    "ai_disclosure": "I am AI · not human",
+    "sos": "SOS"
+  },
+  "onboarding": {
+    "tagline": "a space while you find a real person",
+    "age_prompt": "how old are you?"
+  },
+  "theme": {
+    "prompt": "what's on your mind today?",
+    "options": {
+      "identity": "who I am",
+      "meaning": "meaning",
+      "freedom": "freedom",
+      "relationships": "relationships",
+      "future": "future",
+      "anxiety": "anxiety",
+      "nothing": "just here"
+    }
+  },
+  "chat": {
+    "input_placeholder": "type...",
+    "session_timer": "{{minutes}}:{{seconds}}",
+    "session_warning": "one minute left"
+  },
+  "crisis": {
+    "headline": "support right now",
+    "ua_line": "Children's Trust Line",
+    "ua_number": "116 111",
+    "ua_note": "free · 24/7",
+    "teenergizer": "Teenergizer",
+    "teenergizer_number": "7333",
+    "teenergizer_note": "chat · for teens"
+  },
+  "exit": {
+    "headline": "session complete",
+    "message": "25 minutes passed. take a break.",
+    "next_cta": "find a specialist"
+  },
+  "info": {
+    "headline": "how I work",
+    "ai_statement": "I am not human. I am an algorithm that can reflect your words.",
+    "purpose": "I exist to hold space while you find a real person."
+  }
+}

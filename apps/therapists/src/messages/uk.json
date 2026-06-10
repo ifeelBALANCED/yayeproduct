@@ -1,0 +1,22 @@
+{
+  "dashboard": {
+    "title": "реферали",
+    "new": "нові",
+    "active": "активні",
+    "completed": "завершені",
+    "urgent": "терміново"
+  },
+  "referral": {
+    "theme": "тема",
+    "age_band": "вік",
+    "modes": "послідовність режимів",
+    "summary": "резюме сесії",
+    "accept": "прийняти",
+    "decline": "відхилити"
+  },
+  "login": {
+    "title": "вхід для фахівців",
+    "email_label": "email",
+    "submit": "надіслати посилання"
+  }
+}
